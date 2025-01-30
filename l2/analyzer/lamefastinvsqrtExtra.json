@@ -441,6 +441,24 @@
       ],
       "name": "fnwithcollisions",
       "type": "int"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        },
+        {
+          "name": "c",
+          "type": "int"
+        }
+      ],
+      "instrs": [],
+      "name": "ignoresargs"
     }
   ]
 }

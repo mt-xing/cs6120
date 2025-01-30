@@ -65,3 +65,6 @@
   print b;
   ret a;
 }
+@ignoresargs(a: int, b: int, c: int) {
+  
+}
