@@ -56,6 +56,12 @@ function getBlocks(instructions: BrilInstruction[]): {
     return { blocks: blocks.filter(b => b.length > 0 || labelledBlocks.has(b)), mapping };
 }
 
+/**
+ * Represents each block as an array of Bril Instructions, and represents the CFG as a mapping
+ * from blocks to sets of blocks. Note that the first entry in the map is a mapping from
+ * an empty array to the first block, representing the entry point of the CFG. Any block that
+ * does not have a mapping set is implicitly considered to point to the exit of the CFG.
+ */
 function getCfg(blocks: BrilInstruction[][], mapping: Map<string, BrilInstruction[]>): Map<BrilInstruction[], Set<BrilInstruction[]>> {
     const cfg = new Map<BrilInstruction[], Set<BrilInstruction[]>>();
     
