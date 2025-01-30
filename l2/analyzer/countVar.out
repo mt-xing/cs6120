@@ -1,0 +1,7 @@
+Function "main" has 3 unique variables
+Function "rsqrt" has 9 unique variables
+Function "onestep" has 6 unique variables
+Function "absdiff" has 3 unique variables
+Function "novars" has 0 unique variables
+Function "onevar" has 1 unique variable
+Function "fnwithcollisions" has 3 unique variables
