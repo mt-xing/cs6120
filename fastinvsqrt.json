@@ -1,0 +1,169 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "num",
+          "type": "float"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "num"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "x",
+          "funcs": [
+            "rsqrt"
+          ],
+          "op": "call",
+          "type": "float"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "num",
+          "type": "float"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "half",
+          "op": "const",
+          "type": "float",
+          "value": 0.5
+        },
+        {
+          "args": [
+            "num",
+            "half"
+          ],
+          "dest": "x2",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "num"
+          ],
+          "dest": "y",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "num"
+          ],
+          "dest": "i",
+          "op": "float2int",
+          "type": "int"
+        },
+        {
+          "dest": "magic",
+          "op": "const",
+          "type": "int",
+          "value": 1597463007
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "i",
+            "two"
+          ],
+          "dest": "i2",
+          "op": "div",
+          "type": "int"
+        },
+        {
+          "args": [
+            "magic",
+            "i2"
+          ],
+          "dest": "i",
+          "op": "sub",
+          "type": "int"
+        },
+        {
+          "args": [
+            "i3"
+          ],
+          "dest": "y",
+          "op": "int2float",
+          "type": "float"
+        },
+        {
+          "dest": "threehalfs",
+          "op": "const",
+          "type": "float",
+          "value": 1.5
+        },
+        {
+          "args": [
+            "y",
+            "y"
+          ],
+          "dest": "y2",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "x2",
+            "y2"
+          ],
+          "dest": "x2y2",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "threehalfs",
+            "x2y2"
+          ],
+          "dest": "diff",
+          "op": "fsub",
+          "type": "float"
+        },
+        {
+          "args": [
+            "y",
+            "diff"
+          ],
+          "dest": "finaly",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "finaly"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "rsqrt",
+      "type": "float"
+    }
+  ]
+}
