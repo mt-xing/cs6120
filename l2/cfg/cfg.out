@@ -1,6 +1,6 @@
 CFG for function "main"
 Map(1) {
-  [] => Set(1) {
+  "START" => Set(1) {
     [
       { args: [ "num" ], dest: "v0", op: "id", type: "float" },
       { args: [ "precision" ], dest: "v1", op: "id", type: "float" },
@@ -17,7 +17,7 @@ Map(1) {
 }
 CFG for function "rsqrt"
 Map(4) {
-  [] => Set(1) {
+  "START" => Set(1) {
     [
       { args: [ "num" ], dest: "v0", op: "id", type: "float" },
       { args: [ "precision" ], dest: "v1", op: "id", type: "float" },
@@ -104,7 +104,7 @@ Map(4) {
 }
 CFG for function "onestep"
 Map(5) {
-  [] => Set(1) {
+  "START" => Set(1) {
     [
       { dest: "threehalfs", op: "const", type: "float", value: 1.5 },
       { args: [ "num" ], dest: "y", op: "id", type: "float" },
@@ -146,7 +146,7 @@ Map(5) {
 }
 CFG for function "absdiff"
 Map(2) {
-  [] => Set(1) {
+  "START" => Set(1) {
     [
       {
         args: [ "a", "b" ],
