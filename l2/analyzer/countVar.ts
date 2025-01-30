@@ -3,14 +3,14 @@ type BrilFunction = {
     name: string;
     args?: {name: string; type: Type}[];
     type?: Type;
-    instrs: {
+    instrs: ({
         op: string;
         dest?: string;
         type?: Type;
         args?: string[];
         funcs?: string[];
         labels?: string[];
-    }[];
+    } | { label: string })[];
 };
 type BrilProgram = {
     functions: BrilFunction[]
@@ -24,7 +24,7 @@ const program = JSON.parse(text) as BrilProgram;
 function countVarsInFunc(fn: BrilFunction): number {
     const vars = new Set<string>();
     fn.instrs.forEach(instr => {
-        if (instr.dest) {
+        if ("op" in instr && instr.dest) {
             vars.add(instr.dest);
         }
     });

@@ -1,0 +1,353 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "num",
+          "type": "float"
+        },
+        {
+          "name": "precision",
+          "type": "float"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "num"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "precision"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "v0",
+            "v1"
+          ],
+          "dest": "x",
+          "funcs": [
+            "rsqrt"
+          ],
+          "op": "call",
+          "type": "float"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    },
+    {
+      "args": [
+        {
+          "name": "num",
+          "type": "float"
+        },
+        {
+          "name": "precision",
+          "type": "float"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "num"
+          ],
+          "dest": "v0",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "precision"
+          ],
+          "dest": "v1",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "dest": "half",
+          "op": "const",
+          "type": "float",
+          "value": 0.5
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "float",
+          "value": 1.0
+        },
+        {
+          "args": [
+            "v0",
+            "half"
+          ],
+          "dest": "x2",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "v0"
+          ],
+          "dest": "y",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "one",
+            "v0"
+          ],
+          "dest": "newy",
+          "op": "fdiv",
+          "type": "float"
+        },
+        {
+          "label": "onestep"
+        },
+        {
+          "args": [
+            "newy",
+            "y"
+          ],
+          "dest": "diff",
+          "funcs": [
+            "absdiff"
+          ],
+          "op": "call",
+          "type": "float"
+        },
+        {
+          "args": [
+            "diff",
+            "v1"
+          ],
+          "dest": "done",
+          "op": "flt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "done"
+          ],
+          "labels": [
+            "break",
+            "continue"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "continue"
+        },
+        {
+          "args": [
+            "newy"
+          ],
+          "dest": "y",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "x2",
+            "y"
+          ],
+          "dest": "newy",
+          "funcs": [
+            "onestep"
+          ],
+          "op": "call",
+          "type": "float"
+        },
+        {
+          "labels": [
+            "onestep"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "break"
+        },
+        {
+          "args": [
+            "newy"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "rsqrt",
+      "type": "float"
+    },
+    {
+      "args": [
+        {
+          "name": "x2",
+          "type": "float"
+        },
+        {
+          "name": "num",
+          "type": "float"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "threehalfs",
+          "op": "const",
+          "type": "float",
+          "value": 1.5
+        },
+        {
+          "args": [
+            "num"
+          ],
+          "dest": "y",
+          "op": "id",
+          "type": "float"
+        },
+        {
+          "args": [
+            "y",
+            "y"
+          ],
+          "dest": "y2",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "x2",
+            "y2"
+          ],
+          "dest": "x2y2",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "threehalfs",
+            "x2y2"
+          ],
+          "dest": "diff",
+          "op": "fsub",
+          "type": "float"
+        },
+        {
+          "label": "uselesslabela"
+        },
+        {
+          "label": "uselesslabelb"
+        },
+        {
+          "label": "uselesslabelc"
+        },
+        {
+          "label": "uselesslabeld"
+        },
+        {
+          "args": [
+            "y",
+            "diff"
+          ],
+          "dest": "finaly",
+          "op": "fmul",
+          "type": "float"
+        },
+        {
+          "args": [
+            "finaly"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "onestep",
+      "type": "float"
+    },
+    {
+      "args": [
+        {
+          "name": "a",
+          "type": "float"
+        },
+        {
+          "name": "b",
+          "type": "float"
+        }
+      ],
+      "instrs": [
+        {
+          "label": "labelatstartoffn"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "firstsmall",
+          "op": "flt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "firstsmall"
+          ],
+          "labels": [
+            "bminusa",
+            "aminusb"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "bminusa"
+        },
+        {
+          "args": [
+            "b",
+            "a"
+          ],
+          "dest": "z",
+          "op": "fsub",
+          "type": "float"
+        },
+        {
+          "args": [
+            "z"
+          ],
+          "op": "ret"
+        },
+        {
+          "label": "aminusb"
+        },
+        {
+          "args": [
+            "a",
+            "b"
+          ],
+          "dest": "y",
+          "op": "fsub",
+          "type": "float"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "absdiff",
+      "type": "float"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+command = "deno --allow-read=. {filename} {args}"
