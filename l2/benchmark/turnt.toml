@@ -1,1 +1,2 @@
 command = "brili {args} < {filename}"
+output.prof = "2"
