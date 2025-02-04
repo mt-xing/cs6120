@@ -1,4 +1,4 @@
-import { BrilFunction, BrilInstruction, getBlocks } from "../bril_shared/cfg.ts";
+import { BrilFunction, BrilInstruction, BrilProgram, getBlocks } from "../bril_shared/cfg.ts";
 
 function hasSideEffect(instr: BrilInstruction) {
     return "label" in instr || "dest" in instr;
@@ -77,3 +77,9 @@ export const deadCodeElimination = iterateUntilConvergence((fn: BrilFunction) =>
         changed: r1.changed || r2.changed,
     }
 });
+
+export function deadCodeEliminationProgram(prog: BrilProgram): BrilProgram {
+    return {
+        functions: prog.functions.map(deadCodeElimination)
+    };
+}

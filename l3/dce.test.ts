@@ -1,6 +1,7 @@
 import { assertEquals, assertLess, assertLessOrEqual } from "jsr:@std/assert";
 import { walk } from "jsr:@std/fs/walk";
 import { BrilProgram } from "../bril_shared/cfg.ts";
+import { deadCodeEliminationProgram } from "./dce.ts";
 
 export async function pipeStringIntoCmdAndGetOutput(
     cmd: string,
@@ -93,7 +94,7 @@ export async function testFileForCorrectnessAndReduction(
 for await (const file of walk("../bril_benchmarks")) {
     if (file.isFile) {
         Deno.test(`DCE: ${file.name}`, async () => {
-            await testFileForCorrectnessAndReduction((x) => x, file.path, false);
+            await testFileForCorrectnessAndReduction(deadCodeEliminationProgram, file.path, false);
         });
     }
 }
