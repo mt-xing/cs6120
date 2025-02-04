@@ -38,9 +38,30 @@ function superSimpleDeadCodeElimination(val: BrilFunction) {
 function blockDeadCodeElimination(blocks: BrilInstruction[][]) {
     const val: BrilInstruction[][] = [];
     for (const block of blocks) {
-
+        const unusedAssignments = new Map<string, number>();
+        const toDelete = new Set<number>();
+        block.forEach((instr, i) => {
+            if ("op" in instr) {
+                instr.args?.forEach((rhsVar) => {
+                    unusedAssignments.delete(rhsVar);
+                });
+                if (instr.dest) {
+                    const lhsToDelete = unusedAssignments.get(instr.dest);
+                    if (lhsToDelete !== undefined) {
+                        toDelete.add(lhsToDelete);
+                    }
+                    if (hasSideEffect(instr)) {
+                        unusedAssignments.delete(instr.dest);
+                    } else {
+                        unusedAssignments.set(instr.dest, i);
+                    }
+                }
+            }
+        });
+        const newBlock = block.filter((_, i) => !toDelete.has(i));
+        val.push(newBlock);
     }
-    return {val, changed: false};
+    return {val, changed: val.length !== blocks.length || val.some((v, i) => v.length !== blocks[i].length)};
 }
 
 export const deadCodeElimination = iterateUntilConvergence((fn: BrilFunction) => {
