@@ -66,7 +66,7 @@ export async function testFileForCorrectnessAndReduction(
     const programText = await pipeStringIntoCmdAndGetOutput("bril2json", brilText);
 
     const argsParse = /^# ?ARGS: (.+)$/gm.exec(brilText);
-    const programArgs = ['-p'].concat(argsParse ? argsParse[1].split(" ") : []);
+    const programArgs = ['-p'].concat(argsParse ? (argsParse[1].trim()).split(" ") : []);
 
     const ogInterpOutput = await pipeStringIntoCmdAndGetOutput("brili", programText.stdout, programArgs);
 
