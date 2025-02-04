@@ -1,7 +1,7 @@
 import { BrilFunction, BrilInstruction, BrilProgram, getBlocks } from "../bril_shared/cfg.ts";
 
 function hasSideEffect(instr: BrilInstruction) {
-    return "label" in instr || "dest" in instr;
+    return !("label" in instr) && !("dest" in instr);
 }
 
 /**

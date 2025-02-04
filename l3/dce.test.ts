@@ -91,14 +91,15 @@ export async function testFileForCorrectnessAndReduction(
     }
 }
 
-for await (const file of walk("../bril_benchmarks")) {
-    if (file.isFile) {
-        Deno.test(`DCE: ${file.name}`, async () => {
-            await testFileForCorrectnessAndReduction(deadCodeEliminationProgram, file.path, false);
-        });
+async function runOnAllInFolder(folder: string, strictReduction: boolean) {
+    for await (const file of walk(folder)) {
+        if (file.isFile) {
+            Deno.test(`DCE: ${file.name}`, async () => {
+                await testFileForCorrectnessAndReduction(deadCodeEliminationProgram, file.path, strictReduction);
+            });
+        }
     }
 }
 
-// Deno.test(`DCE: Collatz`, async () => {
-//     await testFileForCorrectnessAndReduction(deadCodeEliminationProgram, "../bril_benchmarks/core/collatz.bril", false);
-// });
+await runOnAllInFolder("./dce_tests", true);
+await runOnAllInFolder("../bril_benchmarks", false);
