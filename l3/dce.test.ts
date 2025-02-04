@@ -1,4 +1,4 @@
-import { assertEquals, assertLess, assertLessOrEqual } from "jsr:@std/assert";
+import { assertEquals, assertLess, assertLessOrEqual, assertNotEquals } from "jsr:@std/assert";
 import { walk } from "jsr:@std/fs/walk";
 import { BrilProgram } from "../bril_shared/cfg.ts";
 import { deadCodeEliminationProgram } from "./dce.ts";
@@ -65,7 +65,7 @@ export async function testFileForCorrectnessAndReduction(
     const brilText = await Deno.readTextFile(filePath);
     const programText = await pipeStringIntoCmdAndGetOutput("bril2json", brilText);
 
-    const argsParse = /^# ARGS: (.+)$/gm.exec(brilText);
+    const argsParse = /^# ?ARGS: (.+)$/gm.exec(brilText);
     const programArgs = ['-p'].concat(argsParse ? argsParse[1].split(" ") : []);
 
     const ogInterpOutput = await pipeStringIntoCmdAndGetOutput("brili", programText.stdout, programArgs);
@@ -84,6 +84,7 @@ export async function testFileForCorrectnessAndReduction(
     const newInstrs = extractDynInstrs(newInterpOutput.stderr);
 
     assertEquals(newOutput, ogOutput);
+    assertNotEquals(newInstrs, -1, newInterpOutput.stderr);
     if (strictReduction) {
         assertLess(newInstrs, ogInstrs);
     } else {
@@ -101,5 +102,6 @@ async function runOnAllInFolder(folder: string, strictReduction: boolean) {
     }
 }
 
-await runOnAllInFolder("./dce_tests", true);
+await runOnAllInFolder("./dce_strict_tests", true);
+await runOnAllInFolder("./dce_harder_tests", false);
 await runOnAllInFolder("../bril_benchmarks", false);
