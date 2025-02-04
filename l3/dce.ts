@@ -1,4 +1,4 @@
-import { BrilFunction, BrilInstruction, BrilProgram, CFG, getBlocks } from "../bril_shared/cfg.ts";
+import { BrilFunction, BrilInstruction, getBlocks } from "../bril_shared/cfg.ts";
 
 function hasSideEffect(instr: BrilInstruction) {
     return "label" in instr || "dest" in instr;
