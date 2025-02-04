@@ -98,3 +98,7 @@ for await (const file of walk("../bril_benchmarks")) {
         });
     }
 }
+
+// Deno.test(`DCE: Collatz`, async () => {
+//     await testFileForCorrectnessAndReduction(deadCodeEliminationProgram, "../bril_benchmarks/core/collatz.bril", false);
+// });

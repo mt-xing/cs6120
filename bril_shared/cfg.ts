@@ -39,7 +39,7 @@ export function getBlocks(instructions: BrilInstruction[]): {
             curr = [];
             blocks.push(curr);
         } else if ("label" in instr) {
-            curr = [];
+            curr = [instr];
             blocks.push(curr);
             labelledBlocks.add(curr);
             mapping.set(instr.label, curr);

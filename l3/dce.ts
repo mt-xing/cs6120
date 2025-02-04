@@ -27,7 +27,7 @@ function superSimpleDeadCodeElimination(val: BrilFunction) {
         }
     }
     const newInstrs = val.instrs.filter(
-        (instr) => !hasSideEffect(instr) && "op" in instr && instr.dest && !seen.has(instr.dest)
+        (instr) => hasSideEffect(instr) || !("op" in instr) || !instr.dest || seen.has(instr.dest)
     );
     return {
         val: {...val, instrs: newInstrs},
