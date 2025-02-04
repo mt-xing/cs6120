@@ -95,7 +95,7 @@ export async function testFileForCorrectnessAndReduction(
 async function runOnAllInFolder(folder: string, strictReduction: boolean) {
     for await (const file of walk(folder)) {
         if (file.isFile) {
-            Deno.test(`DCE: ${file.name}`, async () => {
+            Deno.test(`${strictReduction ? "DCE strict: " : "DCE: "}${file.name}`, async () => {
                 await testFileForCorrectnessAndReduction(deadCodeEliminationProgram, file.path, strictReduction);
             });
         }
