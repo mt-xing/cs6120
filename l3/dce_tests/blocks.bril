@@ -1,0 +1,13 @@
+@main() {
+    a: int = const 4;
+    a: int = const 5;
+    b: int = const 2;
+    jmp .hello;
+  .hello:
+    b: int = const 6;
+    a: int = const 10;
+    c: int = const 12;
+    d: int = const 5;
+    x: int = add a d;
+    print x;
+}
