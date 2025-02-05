@@ -1,7 +1,6 @@
 import { assertEquals, assertLess, assertLessOrEqual, assertNotEquals } from "jsr:@std/assert";
 import { walk } from "jsr:@std/fs/walk";
 import { BrilProgram } from "../bril_shared/cfg.ts";
-import { deadCodeEliminationProgram } from "./dce.ts";
 
 export async function pipeStringIntoCmdAndGetOutput(
     cmd: string,
