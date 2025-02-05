@@ -1,5 +1,9 @@
 import { BrilFunction, BrilInstruction, BrilProgram, getBlocks } from "../bril_shared/cfg.ts";
-import { hasSideEffect, iterateUntilConvergence } from "./instructionProcessing.ts";
+import { iterateUntilConvergence } from "./instructionProcessing.ts";
+
+function hasSideEffect(instr: BrilInstruction) {
+    return !("label" in instr) && !("dest" in instr);
+}
 
 function superSimpleDeadCodeElimination(val: BrilFunction) {
     const seen = new Set<string>();
