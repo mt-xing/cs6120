@@ -1,0 +1,8 @@
+@main() {
+    a: int = const 4;
+    b: int = id a;
+    a: int = id a;
+    b: int = const 5;
+    b: int = id a;
+    print a;
+}
