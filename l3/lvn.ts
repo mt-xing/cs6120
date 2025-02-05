@@ -1,5 +1,6 @@
 import { BrilProgram, getBlocks } from "../bril_shared/cfg.ts";
 import { BrilInstruction } from "../bril_shared/cfg.ts";
+import { deadCodeEliminationProgram } from "./dce.ts";
 
 function renameOverwrittenVariables(block: BrilInstruction[]) {
     const lastAssignIndex = new Map<string, number>();
@@ -192,4 +193,8 @@ export function lvnLite(program: BrilProgram) {
             };
         })
     };
+}
+
+export function lvn(program: BrilProgram) {
+    return deadCodeEliminationProgram(lvnLite(program));
 }
