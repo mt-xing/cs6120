@@ -74,7 +74,6 @@ function getCanonicalExprRep(exprRep: ExpressionRepresentation): ExpressionRepre
                 args: exprRep.args.slice().sort((a, b) => a - b) as [number, number],
             };
         case "op":
-            return exprRep;
         case "unknown":
             return exprRep;
     }
@@ -86,6 +85,8 @@ function getExprRepString(exprRep: ExpressionRepresentation): ExprRepString {
     const r = getCanonicalExprRep(exprRep);
     return `${r.type}:${r.op}:${r.args.reduce((a, x) => `${a}:${x}`, '')}`;
 }
+
+const SIDE_EFFECT_OPS = new Set(["alloc", "call"]);
 
 function lvnBlock(block: BrilInstruction[]) {
     const lookupTable: { expression: ExpressionRepresentation, varName: string }[] = [];
@@ -152,7 +153,7 @@ function lvnBlock(block: BrilInstruction[]) {
         const existingExpressionIndex = exprInTable.get(getExprRepString(rhs));
         if (existingExpressionIndex !== undefined) {
             // Previously computed expression
-            if (instr.dest) {
+            if (instr.dest && !SIDE_EFFECT_OPS.has(instr.op)) {
                 newBlock.push({
                     ...instr,
                     op: "id",
@@ -168,7 +169,7 @@ function lvnBlock(block: BrilInstruction[]) {
             }
         } else {
             // New expression
-            if (!instr.dest) {
+            if (!instr.dest || SIDE_EFFECT_OPS.has(instr.op)) {
                 newBlock.push(instr);
             } else {
                 addExpr(rhs, instr.dest);
@@ -188,7 +189,7 @@ export function lvnLite(program: BrilProgram) {
             return {
                 ...fn,
                 instrs: getBlocks(fn.instrs).blocks.map(lvnBlock).flat(),
-            }
+            };
         })
     };
 }
