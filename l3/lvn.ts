@@ -111,7 +111,7 @@ function lvnBlock(block: BrilInstruction[]) {
     }
 
     function getExpr(expr: ExpressionRepresentation) {
-        if (expr.type === "id") {
+        if (expr.type === "id" && lookupTable[expr.args[0]].expression.type !== "unknown") {
             return expr.args[0];
         }
         if (expr.type === "unknown") {
