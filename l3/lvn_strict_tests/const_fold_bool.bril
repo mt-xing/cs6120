@@ -1,0 +1,6 @@
+@main {
+    a: float = const 1.5;
+    b: float = const 2.5;
+    c: bool = flt a b;
+    print c;
+}

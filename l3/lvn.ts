@@ -190,6 +190,62 @@ function lvnBlock(block: BrilInstruction[]) {
         const rhs = instructionToExpr(instr);
 
         switch (rhs.op) {
+            case "not": {
+                const arg1 = lookupTable[rhs.args[0]];
+                if (arg1.expression.t === "const") {
+                    const v1 = (arg1.expression.value as boolean);
+                    const value = !v1;
+                    newBlock.push({
+                        op: "const",
+                        type: instr.type,
+                        dest: instr.dest,
+                        value,
+                    });
+                    if (instr.dest) {
+                        addExpr({ t: "const", value, args: [], op: "const" }, instr.dest);
+                    }
+                    return;
+                }
+                break;
+            }
+            case "and":
+            case "or": {
+                const arg1 = lookupTable[rhs.args[0]];
+                const arg2 = lookupTable[rhs.args[1]];
+                if (arg1.expression.t === "const" && arg2.expression.t === "const") {
+                    const v1 = (arg1.expression.value as boolean);
+                    const v2 = (arg2.expression.value as boolean);
+                    const value = (() => {
+                        switch (rhs.op) {
+                            case "and":
+                                return v1 && v2;
+                            case "or":
+                                return v1 || v2;
+                        }
+                    })();
+                    newBlock.push({
+                        op: "const",
+                        type: instr.type,
+                        dest: instr.dest,
+                        value,
+                    });
+                    if (instr.dest) {
+                        addExpr({ t: "const", value, args: [], op: "const" }, instr.dest);
+                    }
+                    return;
+                }
+                break;
+            }
+            case "eq":
+            case "lt":
+            case "gt":
+            case "le":
+            case "ge":
+            case "feq":
+            case "flt":
+            case "fgt":
+            case "fle":
+            case "fge":
             case "add":
             case "sub":
             case "mul":
@@ -219,6 +275,21 @@ function lvnBlock(block: BrilInstruction[]) {
                             case "add":
                             case "fadd":
                                 return v1 + v2;
+                            case "eq":
+                            case "feq":
+                                return v1 === v2;
+                            case "lt":
+                            case "flt":
+                                return v1 < v2;
+                            case "gt":
+                            case "fgt":
+                                return v1 > v2;
+                            case "le":
+                            case "fle":
+                                return v1 <= v2;
+                            case "ge":
+                            case "fge":
+                                return v1 >= v2;
                         }
                     })();
                     if (Number.isNaN(value)) {
