@@ -47,6 +47,8 @@ export async function testFileForCorrectnessAndReduction(
     assertEquals(newOutput, ogOutput);
     if (ogInstrs !== -1) {
         assertNotEquals(newInstrs, -1, newInterpOutput.stderr);
+    } else {
+        assertEquals(newInstrs, -1);
     }
     if (strictReduction) {
         assertLess(newInstrs, ogInstrs);
