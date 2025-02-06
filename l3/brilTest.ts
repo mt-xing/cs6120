@@ -88,7 +88,16 @@ export function brilTest(name: string, config: {
             const resultRaw = await Promise.all(config.map(c => runOnAllInFolder(t, c.folder, c.prefix ?? name, c.optimization, c.strict)));
             const result = resultRaw.flat();
             const avgReduction = result.reduce((a, x) => a + x, 0) / result.length;
-            console.log(name + " Average Reduction: " + avgReduction);
+            result.sort((a, b) => a - b);
+            console.log("=========================================");
+            console.log(`Optimization Report for ${name}:`);
+            console.log(`Average Reduction: ${avgReduction}`);
+            console.log(`Minimum Reduction: ${result[0]}`);
+            console.log(`1st Quartile Reduction: ${result[Math.floor(result.length / 4)]}`);
+            console.log(`Median Reduction: ${result[Math.floor(result.length / 2)]}`);
+            console.log(`3rd Quartile Reduction: ${result[Math.floor(result.length * 3 / 4)]}`);
+            console.log(`Maximum Reduction: ${result[result.length - 1]}`);
+            console.log("=========================================");
         },
         sanitizeExit: false,
         sanitizeOps: false,
