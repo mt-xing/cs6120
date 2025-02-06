@@ -185,6 +185,28 @@ function lvnBlock(block: BrilInstruction[]) {
 
         const rhs = instructionToExpr(instr);
 
+        switch (rhs.op) {
+            case "add": {
+                const arg1 = lookupTable[rhs.args[0]];
+                const arg2 = lookupTable[rhs.args[1]];
+                if (arg1.expression.t === "const" && arg2.expression.t === "const") {
+                    const value = (arg1.expression.value as number) + (arg2.expression.value as number);
+                    newBlock.push({
+                        op: "const",
+                        type: instr.type,
+                        dest: instr.dest,
+                        value,
+                    });
+                    if (instr.dest) {
+                        addExpr({ t: "const", value, args: [], op: "const" }, instr.dest);
+                    }
+                    return;
+                }
+                break;
+            }
+            default: break;
+        }
+
         const existingExpressionIndex = getExpr(rhs);
         if (existingExpressionIndex !== undefined) {
             // Previously computed expression
