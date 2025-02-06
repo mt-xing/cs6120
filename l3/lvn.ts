@@ -344,8 +344,6 @@ function lvnBlock(block: BrilInstruction[]) {
             }
         }
     });
-    // console.log(lookupTable);
-    // console.log(env);
     return newBlock;
 }
 
@@ -361,9 +359,5 @@ export function lvnLite(program: BrilProgram) {
 }
 
 export function lvn(program: BrilProgram) {
-    // const r = deadCodeEliminationProgram(lvnLite(program));
-    // console.log(JSON.stringify(r));
-    // console.log(r);
-    // return r;
     return deadCodeEliminationProgram(lvnLite(program));
 }

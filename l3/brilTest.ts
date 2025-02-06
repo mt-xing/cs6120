@@ -55,6 +55,8 @@ export async function testFileForCorrectnessAndReduction(
     } else {
         assertLessOrEqual(newInstrs, ogInstrs);
     }
+
+    return ogInstrs - newInstrs;
 }
 
 export async function runOnAllInFolder(t: Deno.TestContext, folder: string, prefix: string, optimization: (program: BrilProgram) => BrilProgram, strictReduction: boolean) {
@@ -64,11 +66,14 @@ export async function runOnAllInFolder(t: Deno.TestContext, folder: string, pref
             files.push(file);
         }
     }
+    const res: number[] = [];
     await Promise.all(files.map(file => {
         return t.step(`${prefix}${strictReduction ? " strict:" : ":"} ${file.name}`, async () => {
-            await testFileForCorrectnessAndReduction(optimization, file.path, strictReduction);
+            const r = await testFileForCorrectnessAndReduction(optimization, file.path, strictReduction);
+            res.push(r);
         });
     }));
+    return res;
 }
 
 export function brilTest(name: string, config: {
@@ -80,7 +85,10 @@ export function brilTest(name: string, config: {
     Deno.test({
         name,
         async fn(t) {
-            await Promise.all(config.map(c => runOnAllInFolder(t, c.folder, c.prefix ?? name, c.optimization, c.strict)));
+            const resultRaw = await Promise.all(config.map(c => runOnAllInFolder(t, c.folder, c.prefix ?? name, c.optimization, c.strict)));
+            const result = resultRaw.flat();
+            const avgReduction = result.reduce((a, x) => a + x, 0) / result.length;
+            console.log(name + " Average Reduction: " + avgReduction);
         },
         sanitizeExit: false,
         sanitizeOps: false,

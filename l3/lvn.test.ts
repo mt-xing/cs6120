@@ -16,6 +16,7 @@ brilTest("LVN", [
 ]);
 
 // Deno.test(`LVN`, async () => {
-    // await testFileForCorrectnessAndReduction(lvn, "../bril_benchmarks/float/leibniz.bril", false);
-    // await testFileForCorrectnessAndReduction(lvn, "./lvn_nonstrict_tests/swap.bril", false);
+//     console.log(await testFileForCorrectnessAndReduction(lvn, "../bril_benchmarks/float/leibniz.bril", false));
+//     console.log(await testFileForCorrectnessAndReduction(lvn, "./lvn_nonstrict_tests/swap.bril", false));
+//     console.log(await testFileForCorrectnessAndReduction(lvn, "./lvn_strict_tests/comm_float.bril", true));
 // });
