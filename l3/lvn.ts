@@ -116,12 +116,19 @@ function lvnBlock(block: BrilInstruction[]) {
 
     function instructionToExpr(instr: Exclude<BrilInstruction, {label: string}>): ExpressionRepresentation {
         switch(instr.op) {
-            case "id":
+            case "id": {
+                const candidateRowIndex = env.get(instr.args![0]);
+                if (candidateRowIndex !== undefined) {
+                    if (lookupTable[candidateRowIndex].expression.type === "id") {
+                        return lookupTable[candidateRowIndex].expression;
+                    }
+                }
                 return {
                     type: "id",
                     op: "id",
                     args: [lookupEnvOrAdd(instr.args![0])]
                 };
+            }
             case "add":
             case "mul":
                 return {
