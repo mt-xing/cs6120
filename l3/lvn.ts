@@ -1,4 +1,4 @@
-import { BrilProgram, getBlocks } from "../bril_shared/cfg.ts";
+import { BrilProgram, getBlocks, Type } from "../bril_shared/cfg.ts";
 import { BrilInstruction } from "../bril_shared/cfg.ts";
 import { deadCodeEliminationProgram } from "./dce.ts";
 
@@ -44,29 +44,36 @@ export function renameOverwrittenVariablesForProgram(program: BrilProgram) {
     };
 }
 
-// const p = await getProgramFromCmdLine();
-// console.log(JSON.stringify(renameOverwrittenVariablesForProgram(p)));
-
 type ExpressionRepresentation = {
-    type: "id",
+    t: "id",
     op: "id",
     args: [number],
+    type?: Type,
 } | {
-    type: "commOp",
+    t: "commOp",
     op: string,
     args: [number, number],
+    type?: Type,
 } | {
-    type: "op",
+    t: "op",
     op: string,
     args: number[],
+    type?: Type,
 } | {
-    type: "unknown",
+    t: "unknown",
     op: "",
     args: [],
+    type?: Type,
+} | {
+    t: "const",
+    op: "const",
+    args: [],
+    value: number | boolean,
+    type?: Type,
 };
 
 function getCanonicalExprRep(exprRep: ExpressionRepresentation): ExpressionRepresentation {
-    switch (exprRep.type) {
+    switch (exprRep.t) {
         case "id":
             return exprRep;
         case "commOp":
@@ -76,15 +83,16 @@ function getCanonicalExprRep(exprRep: ExpressionRepresentation): ExpressionRepre
             };
         case "op":
         case "unknown":
+        case "const":
             return exprRep;
     }
 }
 
-type ExprRepString = `${string}:${string}:${string}`
+type ExprRepString = `${string}:${string}:${string}:${string}`
 
 function getExprRepString(exprRep: ExpressionRepresentation): ExprRepString {
     const r = getCanonicalExprRep(exprRep);
-    return `${r.type}:${r.op}:${r.args.reduce((a, x) => `${a}:${x}`, '')}`;
+    return `${r.t}:${r.op}:${r.type}:${r.args.reduce((a, x) => `${a}:${x}`, '')}${r.t === "const" ? r.value : ''}`;
 }
 
 const SIDE_EFFECT_OPS = new Set(["alloc", "call"]);
@@ -104,11 +112,26 @@ function lvnBlock(block: BrilInstruction[]) {
         return i;
     }
 
-    function lookupEnvOrAdd(varName: string) {
+    function getExpr(expr: ExpressionRepresentation) {
+        // Constant Propagation Check
+        if (
+            expr.t === "id" &&
+            lookupTable[expr.args[0]].expression.t !== "unknown" &&
+            lookupTable[expr.args[0]].expression.type === expr.type
+        ) {
+            return expr.args[0];
+        }
+        if (expr.t === "unknown") {
+            return undefined;
+        }
+        return exprInTable.get(getExprRepString(expr));
+    }
+
+    function lookupEnvOrAdd(varName: string, type?: Type) {
         const candidate = env.get(varName);
 
         if (candidate === undefined) {
-            return addExpr({type: "unknown", op: "", args: []}, varName);
+            return addExpr({t: "unknown", op: "", args: [], type}, varName);
         }
 
         return candidate;
@@ -118,22 +141,33 @@ function lvnBlock(block: BrilInstruction[]) {
         switch(instr.op) {
             case "id":
                 return {
-                    type: "id",
+                    t: "id",
                     op: "id",
-                    args: [lookupEnvOrAdd(instr.args![0])]
+                    args: [lookupEnvOrAdd(instr.args![0], instr.type)],
+                    type: instr.type,
                 };
             case "add":
             case "mul":
                 return {
-                    type: "commOp",
+                    t: "commOp",
                     op: instr.op,
-                    args: [lookupEnvOrAdd(instr.args![0]), lookupEnvOrAdd(instr.args![1])]
+                    args: [lookupEnvOrAdd(instr.args![0], instr.type), lookupEnvOrAdd(instr.args![1], instr.type)],
+                    type: instr.type,
                 };
+            case "const":
+                return {
+                    t: "const",
+                    op: "const",
+                    args: [],
+                    value: instr.value!,
+                    type: instr.type,
+                }
             default:
                 return {
-                    type: "op",
+                    t: "op",
                     op: instr.op,
-                    args: instr.args?.map(lookupEnvOrAdd) ?? [],
+                    args: instr.args?.map(x => lookupEnvOrAdd(x, instr.type)) ?? [],
+                    type: instr.type,
                 };
         }
     }
@@ -144,14 +178,14 @@ function lvnBlock(block: BrilInstruction[]) {
             return;
         }
 
-        if (!instr.args) {
+        if (!instr.args && instr.op !== "const") {
             newBlock.push(instr);
             return;
         }
 
         const rhs = instructionToExpr(instr);
 
-        const existingExpressionIndex = exprInTable.get(getExprRepString(rhs));
+        const existingExpressionIndex = getExpr(rhs);
         if (existingExpressionIndex !== undefined) {
             // Previously computed expression
             if (instr.dest && !SIDE_EFFECT_OPS.has(instr.op)) {
@@ -171,16 +205,21 @@ function lvnBlock(block: BrilInstruction[]) {
         } else {
             // New expression
             if (!instr.dest || SIDE_EFFECT_OPS.has(instr.op)) {
-                newBlock.push(instr);
+                newBlock.push({
+                    ...instr,
+                    args: instr.args?.map(varName => lookupTable[lookupEnvOrAdd(varName)].varName),
+                });
             } else {
                 addExpr(rhs, instr.dest);
                 newBlock.push({
                     ...instr,
-                    args: instr.args.map(varName => lookupTable[lookupEnvOrAdd(varName)].varName),
+                    args: instr.args?.map(varName => lookupTable[lookupEnvOrAdd(varName)].varName),
                 });
             }
         }
     });
+    // console.log(lookupTable);
+    // console.log(env);
     return newBlock;
 }
 
@@ -196,5 +235,9 @@ export function lvnLite(program: BrilProgram) {
 }
 
 export function lvn(program: BrilProgram) {
+    // const r = deadCodeEliminationProgram(lvnLite(program));
+    // console.log(JSON.stringify(r));
+    // console.log(r);
+    // return r;
     return deadCodeEliminationProgram(lvnLite(program));
 }

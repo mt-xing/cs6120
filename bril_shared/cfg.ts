@@ -1,4 +1,6 @@
-type Type = string | {[key: string]: Type};
+import { pipeStringIntoCmdAndGetOutput } from "./io.ts";
+
+export type Type = string | {[key: string]: Type};
 export type BrilInstruction = {
     op: string;
     dest?: string;
@@ -95,6 +97,14 @@ export function getCfg(blocks: BrilInstruction[][], mapping: Map<string, BrilIns
 export async function getProgramFromCmdLine() {
     const filename = Deno.args[0];
     const text = await Deno.readTextFile(filename);
+
+    const splitFileName = filename.split(".");
+    if (splitFileName[splitFileName.length - 1].toLowerCase() === "bril") {
+        const res = await pipeStringIntoCmdAndGetOutput("bril2json", text);
+        const program = JSON.parse(res.stdout) as BrilProgram;
+        return program;
+    }
+
     const program = JSON.parse(text) as BrilProgram;
     return program;
 }

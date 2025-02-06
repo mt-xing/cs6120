@@ -1,0 +1,7 @@
+#ARGS: 1 2
+@main(a: int, b: int) {
+    temp: int = id a;
+    a: int = id b;
+    b: int = id temp;
+    print b;
+}
