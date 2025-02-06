@@ -1,4 +1,4 @@
-import { BrilProgram, getBlocks, Type } from "../bril_shared/cfg.ts";
+import { BrilProgram, getBlocks, getProgramFromCmdLine, Type } from "../bril_shared/cfg.ts";
 import { BrilInstruction } from "../bril_shared/cfg.ts";
 import { deadCodeEliminationProgram } from "./dce.ts";
 
@@ -43,9 +43,6 @@ export function renameOverwrittenVariablesForProgram(program: BrilProgram) {
         })
     };
 }
-
-// const p = await getProgramFromCmdLine();
-// console.log(JSON.stringify(renameOverwrittenVariablesForProgram(p)));
 
 type ExpressionRepresentation = {
     t: "id",
@@ -238,8 +235,9 @@ export function lvnLite(program: BrilProgram) {
 }
 
 export function lvn(program: BrilProgram) {
-    const r = deadCodeEliminationProgram(lvnLite(program));
-    console.log(JSON.stringify(r));
-    console.log(r);
-    return r;
+    // const r = deadCodeEliminationProgram(lvnLite(program));
+    // console.log(JSON.stringify(r));
+    // console.log(r);
+    // return r;
+    return deadCodeEliminationProgram(lvnLite(program));
 }
