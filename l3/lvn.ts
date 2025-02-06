@@ -148,6 +148,10 @@ function lvnBlock(block: BrilInstruction[]) {
                 };
             case "add":
             case "mul":
+            case "eq":
+            case "fadd":
+            case "fmul":
+            case "feq":
                 return {
                     t: "commOp",
                     op: instr.op,
