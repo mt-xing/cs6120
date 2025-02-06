@@ -63,6 +63,11 @@ type ExpressionRepresentation = {
     type: "unknown",
     op: "",
     args: [],
+} | {
+    type: "const",
+    op: "const",
+    args: [],
+    value: number | boolean,
 };
 
 function getCanonicalExprRep(exprRep: ExpressionRepresentation): ExpressionRepresentation {
@@ -76,6 +81,7 @@ function getCanonicalExprRep(exprRep: ExpressionRepresentation): ExpressionRepre
             };
         case "op":
         case "unknown":
+        case "const":
             return exprRep;
     }
 }
@@ -84,7 +90,7 @@ type ExprRepString = `${string}:${string}:${string}`
 
 function getExprRepString(exprRep: ExpressionRepresentation): ExprRepString {
     const r = getCanonicalExprRep(exprRep);
-    return `${r.type}:${r.op}:${r.args.reduce((a, x) => `${a}:${x}`, '')}`;
+    return `${r.type}:${r.op}:${r.args.reduce((a, x) => `${a}:${x}`, '')}${r.type === "const" ? r.value : ''}`;
 }
 
 const SIDE_EFFECT_OPS = new Set(["alloc", "call"]);
@@ -107,6 +113,9 @@ function lvnBlock(block: BrilInstruction[]) {
     function getExpr(expr: ExpressionRepresentation) {
         if (expr.type === "id") {
             return expr.args[0];
+        }
+        if (expr.type === "unknown") {
+            return undefined;
         }
         return exprInTable.get(getExprRepString(expr));
     }
@@ -136,6 +145,13 @@ function lvnBlock(block: BrilInstruction[]) {
                     op: instr.op,
                     args: [lookupEnvOrAdd(instr.args![0]), lookupEnvOrAdd(instr.args![1])]
                 };
+            case "const":
+                return {
+                    type: "const",
+                    op: "const",
+                    args: [],
+                    value: instr.value!,
+                }
             default:
                 return {
                     type: "op",
@@ -191,6 +207,8 @@ function lvnBlock(block: BrilInstruction[]) {
             }
         }
     });
+    // console.log(lookupTable);
+    // console.log(env);
     return newBlock;
 }
 
@@ -206,5 +224,8 @@ export function lvnLite(program: BrilProgram) {
 }
 
 export function lvn(program: BrilProgram) {
-    return deadCodeEliminationProgram(lvnLite(program));
+    const r = deadCodeEliminationProgram(lvnLite(program));
+    console.log(JSON.stringify(r));
+    console.log(r);
+    return r;
 }

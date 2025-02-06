@@ -6,6 +6,7 @@ export type BrilInstruction = {
     args?: string[];
     funcs?: string[];
     labels?: string[];
+    value?: number | boolean;
 } | { label: string };
 export type BrilFunction = {
     name: string;
