@@ -193,7 +193,11 @@ function lvnBlock(block: BrilInstruction[]) {
             case "add":
             case "sub":
             case "mul":
-            case "div": {
+            case "div":
+            case "fadd":
+            case "fmul":
+            case "fsub":
+            case "fdiv": {
                 const arg1 = lookupTable[rhs.args[0]];
                 const arg2 = lookupTable[rhs.args[1]];
                 if (arg1.expression.t === "const" && arg2.expression.t === "const") {
@@ -204,11 +208,16 @@ function lvnBlock(block: BrilInstruction[]) {
                             case "div":
                                 if (v2 === 0) { return NaN; }
                                 return Math.trunc(v1 / v2);
+                            case "fdiv":
+                                return v1 / v2;
                             case "mul":
+                            case "fmul":
                                 return v1 * v2;
                             case "sub":
+                            case "fsub":
                                 return v1 - v2;
                             case "add":
+                            case "fadd":
                                 return v1 + v2;
                         }
                     })();

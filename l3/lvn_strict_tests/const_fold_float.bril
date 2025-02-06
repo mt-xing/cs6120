@@ -1,0 +1,6 @@
+@main {
+    a: float = const 1.5;
+    b: float = const 2.5;
+    c: float = fadd a b;
+    print c;
+}
