@@ -1,0 +1,8 @@
+@main {
+    a: float = const 4.1;
+    b: float = const 2.3;
+    sum1: float = add a b;
+    sum2: float = add b a;
+    prod: float = mul sum1 sum2;
+    print prod;
+}
