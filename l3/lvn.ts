@@ -104,13 +104,6 @@ function lvnBlock(block: BrilInstruction[]) {
         return i;
     }
 
-    function getExpr(expr: ExpressionRepresentation) {
-        if (expr.type === "id") {
-            return expr.args[0];
-        }
-        return exprInTable.get(getExprRepString(expr));
-    }
-
     function lookupEnvOrAdd(varName: string) {
         const candidate = env.get(varName);
 
@@ -123,12 +116,19 @@ function lvnBlock(block: BrilInstruction[]) {
 
     function instructionToExpr(instr: Exclude<BrilInstruction, {label: string}>): ExpressionRepresentation {
         switch(instr.op) {
-            case "id":
+            case "id": {
+                const candidateRowIndex = env.get(instr.args![0]);
+                if (candidateRowIndex !== undefined) {
+                    if (lookupTable[candidateRowIndex].expression.type === "id") {
+                        return lookupTable[candidateRowIndex].expression;
+                    }
+                }
                 return {
                     type: "id",
                     op: "id",
                     args: [lookupEnvOrAdd(instr.args![0])]
                 };
+            }
             case "add":
             case "mul":
                 return {
@@ -151,14 +151,14 @@ function lvnBlock(block: BrilInstruction[]) {
             return;
         }
 
-        if (!instr.args && instr.op !== "const") {
+        if (!instr.args) {
             newBlock.push(instr);
             return;
         }
 
         const rhs = instructionToExpr(instr);
 
-        const existingExpressionIndex = getExpr(rhs);
+        const existingExpressionIndex = exprInTable.get(getExprRepString(rhs));
         if (existingExpressionIndex !== undefined) {
             // Previously computed expression
             if (instr.dest && !SIDE_EFFECT_OPS.has(instr.op)) {
@@ -178,15 +178,12 @@ function lvnBlock(block: BrilInstruction[]) {
         } else {
             // New expression
             if (!instr.dest || SIDE_EFFECT_OPS.has(instr.op)) {
-                newBlock.push({
-                    ...instr,
-                    args: instr.args?.map(varName => lookupTable[lookupEnvOrAdd(varName)].varName),
-                });
+                newBlock.push(instr);
             } else {
                 addExpr(rhs, instr.dest);
                 newBlock.push({
                     ...instr,
-                    args: instr.args?.map(varName => lookupTable[lookupEnvOrAdd(varName)].varName),
+                    args: instr.args.map(varName => lookupTable[lookupEnvOrAdd(varName)].varName),
                 });
             }
         }
