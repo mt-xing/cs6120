@@ -1,5 +1,5 @@
 import { assertEquals, assertLess, assertLessOrEqual, assertNotEquals } from "jsr:@std/assert";
-import { walk } from "jsr:@std/fs/walk";
+import { walk, WalkEntry } from "jsr:@std/fs/walk";
 import { BrilProgram } from "../bril_shared/cfg.ts";
 
 export async function pipeStringIntoCmdAndGetOutput(
@@ -91,12 +91,33 @@ export async function testFileForCorrectnessAndReduction(
     }
 }
 
-export async function runOnAllInFolder(folder: string, prefix: string, optimization: (program: BrilProgram) => BrilProgram, strictReduction: boolean) {
+export async function runOnAllInFolder(t: Deno.TestContext, folder: string, prefix: string, optimization: (program: BrilProgram) => BrilProgram, strictReduction: boolean) {
+    const files: WalkEntry[] = [];
     for await (const file of walk(folder)) {
         if (file.isFile) {
-            Deno.test(`${prefix}${strictReduction ? " strict" : ""}: ${file.name}`, async () => {
-                await testFileForCorrectnessAndReduction(optimization, file.path, strictReduction);
-            });
+            files.push(file);
         }
     }
+    await Promise.all(files.map(file => {
+        return t.step(`${prefix}${strictReduction ? " strict:" : ":"} ${file.name}`, async () => {
+            await testFileForCorrectnessAndReduction(optimization, file.path, strictReduction);
+        });
+    }));
+}
+
+export function brilTest(name: string, config: {
+    folder: string,
+    strict: boolean,
+    optimization: (program: BrilProgram) => BrilProgram,
+    prefix?: string,
+}[]) {
+    Deno.test({
+        name,
+        async fn(t) {
+            await Promise.all(config.map(c => runOnAllInFolder(t, c.folder, c.prefix ?? name, c.optimization, c.strict)));
+        },
+        sanitizeExit: false,
+        sanitizeOps: false,
+        sanitizeResources: false,
+    });
 }

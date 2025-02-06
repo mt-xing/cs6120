@@ -1,6 +1,8 @@
-import { runOnAllInFolder } from "./brilTest.ts";
+import { brilTest } from "./brilTest.ts";
 import { deadCodeEliminationProgram } from "./dce.ts";
 
-await runOnAllInFolder("./dce_strict_tests", "DCE", deadCodeEliminationProgram, true);
-await runOnAllInFolder("./dce_harder_tests", "DCE", deadCodeEliminationProgram, false);
-await runOnAllInFolder("../bril_benchmarks", "DCE", deadCodeEliminationProgram, false);
+brilTest("DCE", [
+    { folder: "./dce_strict_tests", optimization: deadCodeEliminationProgram, strict: true },
+    { folder: "./dce_harder_tests", optimization: deadCodeEliminationProgram, strict: false },
+    { folder: "../bril_benchmarks", optimization: deadCodeEliminationProgram, strict: false },
+]);
