@@ -1,4 +1,4 @@
-import { BrilProgram, getBlocks } from "../bril_shared/cfg.ts";
+import { BrilProgram, getBlocks, Type } from "../bril_shared/cfg.ts";
 import { BrilInstruction } from "../bril_shared/cfg.ts";
 import { deadCodeEliminationProgram } from "./dce.ts";
 
@@ -48,30 +48,35 @@ export function renameOverwrittenVariablesForProgram(program: BrilProgram) {
 // console.log(JSON.stringify(renameOverwrittenVariablesForProgram(p)));
 
 type ExpressionRepresentation = {
-    type: "id",
+    t: "id",
     op: "id",
     args: [number],
+    type?: Type,
 } | {
-    type: "commOp",
+    t: "commOp",
     op: string,
     args: [number, number],
+    type?: Type,
 } | {
-    type: "op",
+    t: "op",
     op: string,
     args: number[],
+    type?: Type,
 } | {
-    type: "unknown",
+    t: "unknown",
     op: "",
     args: [],
+    type?: Type,
 } | {
-    type: "const",
+    t: "const",
     op: "const",
     args: [],
     value: number | boolean,
+    type?: Type,
 };
 
 function getCanonicalExprRep(exprRep: ExpressionRepresentation): ExpressionRepresentation {
-    switch (exprRep.type) {
+    switch (exprRep.t) {
         case "id":
             return exprRep;
         case "commOp":
@@ -86,11 +91,11 @@ function getCanonicalExprRep(exprRep: ExpressionRepresentation): ExpressionRepre
     }
 }
 
-type ExprRepString = `${string}:${string}:${string}`
+type ExprRepString = `${string}:${string}:${string}:${string}`
 
 function getExprRepString(exprRep: ExpressionRepresentation): ExprRepString {
     const r = getCanonicalExprRep(exprRep);
-    return `${r.type}:${r.op}:${r.args.reduce((a, x) => `${a}:${x}`, '')}${r.type === "const" ? r.value : ''}`;
+    return `${r.t}:${r.op}:${r.type}:${r.args.reduce((a, x) => `${a}:${x}`, '')}${r.t === "const" ? r.value : ''}`;
 }
 
 const SIDE_EFFECT_OPS = new Set(["alloc", "call"]);
@@ -111,20 +116,25 @@ function lvnBlock(block: BrilInstruction[]) {
     }
 
     function getExpr(expr: ExpressionRepresentation) {
-        if (expr.type === "id" && lookupTable[expr.args[0]].expression.type !== "unknown") {
+        // Constant Propagation Check
+        if (
+            expr.t === "id" &&
+            lookupTable[expr.args[0]].expression.t !== "unknown" &&
+            lookupTable[expr.args[0]].expression.type === expr.type
+        ) {
             return expr.args[0];
         }
-        if (expr.type === "unknown") {
+        if (expr.t === "unknown") {
             return undefined;
         }
         return exprInTable.get(getExprRepString(expr));
     }
 
-    function lookupEnvOrAdd(varName: string) {
+    function lookupEnvOrAdd(varName: string, type?: Type) {
         const candidate = env.get(varName);
 
         if (candidate === undefined) {
-            return addExpr({type: "unknown", op: "", args: []}, varName);
+            return addExpr({t: "unknown", op: "", args: [], type}, varName);
         }
 
         return candidate;
@@ -134,29 +144,33 @@ function lvnBlock(block: BrilInstruction[]) {
         switch(instr.op) {
             case "id":
                 return {
-                    type: "id",
+                    t: "id",
                     op: "id",
-                    args: [lookupEnvOrAdd(instr.args![0])]
+                    args: [lookupEnvOrAdd(instr.args![0], instr.type)],
+                    type: instr.type,
                 };
             case "add":
             case "mul":
                 return {
-                    type: "commOp",
+                    t: "commOp",
                     op: instr.op,
-                    args: [lookupEnvOrAdd(instr.args![0]), lookupEnvOrAdd(instr.args![1])]
+                    args: [lookupEnvOrAdd(instr.args![0], instr.type), lookupEnvOrAdd(instr.args![1], instr.type)],
+                    type: instr.type,
                 };
             case "const":
                 return {
-                    type: "const",
+                    t: "const",
                     op: "const",
                     args: [],
                     value: instr.value!,
+                    type: instr.type,
                 }
             default:
                 return {
-                    type: "op",
+                    t: "op",
                     op: instr.op,
-                    args: instr.args?.map(lookupEnvOrAdd) ?? [],
+                    args: instr.args?.map(x => lookupEnvOrAdd(x, instr.type)) ?? [],
+                    type: instr.type,
                 };
         }
     }

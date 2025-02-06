@@ -1,4 +1,4 @@
-type Type = string | {[key: string]: Type};
+export type Type = string | {[key: string]: Type};
 export type BrilInstruction = {
     op: string;
     dest?: string;
