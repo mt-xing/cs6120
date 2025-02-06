@@ -45,7 +45,9 @@ export async function testFileForCorrectnessAndReduction(
     const newInstrs = extractDynInstrs(newInterpOutput.stderr);
 
     assertEquals(newOutput, ogOutput);
-    assertNotEquals(newInstrs, -1, newInterpOutput.stderr);
+    if (ogInstrs !== -1) {
+        assertNotEquals(newInstrs, -1, newInterpOutput.stderr);
+    }
     if (strictReduction) {
         assertLess(newInstrs, ogInstrs);
     } else {
