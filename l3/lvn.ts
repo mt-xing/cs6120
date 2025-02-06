@@ -186,11 +186,31 @@ function lvnBlock(block: BrilInstruction[]) {
         const rhs = instructionToExpr(instr);
 
         switch (rhs.op) {
-            case "add": {
+            case "add":
+            case "sub":
+            case "mul":
+            case "div": {
                 const arg1 = lookupTable[rhs.args[0]];
                 const arg2 = lookupTable[rhs.args[1]];
                 if (arg1.expression.t === "const" && arg2.expression.t === "const") {
-                    const value = (arg1.expression.value as number) + (arg2.expression.value as number);
+                    const v1 = (arg1.expression.value as number);
+                    const v2 = (arg2.expression.value as number);
+                    const value = (() => {
+                        switch (rhs.op) {
+                            case "div":
+                                if (v2 === 0) { return NaN; }
+                                return Math.trunc(v1 / v2);
+                            case "mul":
+                                return v1 * v2;
+                            case "sub":
+                                return v1 - v2;
+                            case "add":
+                                return v1 + v2;
+                        }
+                    })();
+                    if (Number.isNaN(value)) {
+                        break;
+                    }
                     newBlock.push({
                         op: "const",
                         type: instr.type,
