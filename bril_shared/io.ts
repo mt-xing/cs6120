@@ -37,3 +37,13 @@ export async function pipeStringIntoCmdAndGetOutput(
     return {stdout: outputText, stderr: errText};
 
 }
+
+export function jsonStringify(o: unknown) {
+    // https://stackoverflow.com/questions/19577061/how-do-i-stringify-a-json-object-with-a-negative-zero-in-javascript
+    return JSON.stringify(o, (_k, v) => {
+        if (v == 0 && 1 / v == -Infinity) {
+            return "-0.0";
+        }
+        return v;
+    }).replace(/"-0.0"/g, '-0');
+}

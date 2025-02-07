@@ -2,6 +2,18 @@ import { BrilFunction, BrilInstruction, BrilProgram, getBlocks } from "../bril_s
 import { iterateUntilConvergence } from "./instructionProcessing.ts";
 
 function hasSideEffect(instr: BrilInstruction) {
+    if ("op" in instr) {
+        switch (instr.op) {
+            case "phi":
+            case "guard":
+            case "commit":
+            case "speculate":
+            case "call":
+            case "alloc":
+                return true;
+            default: break;
+        }
+    }
     return !("label" in instr) && !("dest" in instr);
 }
 

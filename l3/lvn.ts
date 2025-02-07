@@ -1,5 +1,6 @@
 import { BrilProgram, getBlocks, Type } from "../bril_shared/cfg.ts";
 import { BrilInstruction } from "../bril_shared/cfg.ts";
+import { jsonStringify } from "../bril_shared/io.ts";
 import { deadCodeEliminationProgram } from "./dce.ts";
 
 function renameOverwrittenVariables(block: BrilInstruction[]) {
@@ -92,7 +93,7 @@ type ExprRepString = `${string}:${string}:${string}:${string}`
 
 function getExprRepString(exprRep: ExpressionRepresentation): ExprRepString {
     const r = getCanonicalExprRep(exprRep);
-    return `${r.t}:${r.op}:${r.type}:${r.args.reduce((a, x) => `${a}:${x}`, '')}${r.t === "const" ? r.value : ''}`;
+    return `${r.t}:${r.op}:${r.type}:${r.args.reduce((a, x) => `${a}:${x}`, '')}${r.t === "const" ? jsonStringify(r.value) : ''}`;
 }
 
 const SIDE_EFFECT_OPS = new Set(["alloc", "call"]);
@@ -264,8 +265,10 @@ function lvnBlock(block: BrilInstruction[]) {
                             case "div":
                                 if (v2 === 0) { return NaN; }
                                 return Math.trunc(v1 / v2);
-                            case "fdiv":
+                            case "fdiv": {
+                                if (v2 === 0) { return NaN; }
                                 return v1 / v2;
+                            }
                             case "mul":
                             case "fmul":
                                 return v1 * v2;

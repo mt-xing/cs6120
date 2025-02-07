@@ -1,7 +1,7 @@
 import { assertEquals, assertLess, assertLessOrEqual, assertNotEquals } from "jsr:@std/assert";
 import { walk, WalkEntry } from "jsr:@std/fs/walk";
 import { BrilProgram } from "../bril_shared/cfg.ts";
-import { pipeStringIntoCmdAndGetOutput } from "../bril_shared/io.ts";
+import { jsonStringify, pipeStringIntoCmdAndGetOutput } from "../bril_shared/io.ts";
 
 /**
  * Runs a bril program twice, once with and once without an optimization, and
@@ -37,7 +37,7 @@ export async function testFileForCorrectnessAndReduction(
     const ogInstrs = extractDynInstrs(ogInterpOutput.stderr);
 
     const newProgram = optimization(program);
-    const newProgramText = JSON.stringify(newProgram);
+    const newProgramText = jsonStringify(newProgram);
 
     const newInterpOutput = await pipeStringIntoCmdAndGetOutput("brili", newProgramText, programArgs);
 

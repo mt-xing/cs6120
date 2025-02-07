@@ -37,7 +37,7 @@ export function getBlocks(instructions: BrilInstruction[]): {
     blocks.push(curr);
 
     instructions.forEach(instr => {
-        if ("op" in instr && (instr.op === "jmp" || instr.op === "br")) {
+        if ("op" in instr && (instr.op === "jmp" || instr.op === "br" || instr.op === "speculate" || instr.op === "guard")) {
             curr.push(instr);
             curr = [];
             blocks.push(curr);
