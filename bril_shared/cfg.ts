@@ -20,6 +20,8 @@ export type BrilProgram = {
     functions: BrilFunction[]
 };
 
+export type BasicBlock = BrilInstruction[];
+
 /**
  * Returns the blocks in the CFG in order of appearance,
  * as well as a mapping from the name of each label to the
@@ -27,12 +29,12 @@ export type BrilProgram = {
  * started with a label will not be mapped.
  */
 export function getBlocks(instructions: BrilInstruction[]): {
-    blocks: BrilInstruction[][];
-    mapping: Map<string, BrilInstruction[]>;
+    blocks: BasicBlock[];
+    mapping: Map<string, BasicBlock>;
 } {
-    const labelledBlocks = new Set<BrilInstruction[]>();
-    const mapping = new Map<string, BrilInstruction[]>();
-    const blocks: BrilInstruction[][] = [];
+    const labelledBlocks = new Set<BasicBlock>();
+    const mapping = new Map<string, BasicBlock>();
+    const blocks: BasicBlock[] = [];
     let curr: BrilInstruction[] = [];
     blocks.push(curr);
 
@@ -54,7 +56,7 @@ export function getBlocks(instructions: BrilInstruction[]): {
     return { blocks: blocks.filter(b => b.length > 0 || labelledBlocks.has(b)), mapping };
 }
 
-export type CFG = Map<"START" | BrilInstruction[], Set<BrilInstruction[]>>;
+export type CFG = Map<"START" | BasicBlock, Set<BasicBlock>>;
 
 /**
  * Represents each block as an array of Bril Instructions, and represents the CFG as a mapping
@@ -62,11 +64,11 @@ export type CFG = Map<"START" | BrilInstruction[], Set<BrilInstruction[]>>;
  * the constant "START" to the first block, representing the entry point of the CFG. Any block that
  * does not have a mapping set is implicitly considered to point to the exit of the CFG.
  */
-export function getCfg(blocks: BrilInstruction[][], mapping: Map<string, BrilInstruction[]>): CFG {
-    const cfg = new Map<"START" | BrilInstruction[], Set<BrilInstruction[]>>();
+export function getCfg(blocks: BasicBlock[], mapping: Map<string, BasicBlock>): CFG {
+    const cfg = new Map<"START" | BasicBlock, Set<BasicBlock>>();
     
     if (blocks.length > 0) {
-        const s = new Set<BrilInstruction[]>();
+        const s = new Set<BasicBlock>();
         s.add(blocks[0]);
         cfg.set("START", s);
     }
@@ -74,18 +76,18 @@ export function getCfg(blocks: BrilInstruction[][], mapping: Map<string, BrilIns
     blocks.forEach((block, i, arr) => {
         const last = block.length > 0 ? block[block.length - 1] : undefined;
         if (last && "op" in last && last.op === "jmp") {
-            const s = new Set<BrilInstruction[]>();
+            const s = new Set<BasicBlock>();
             s.add(mapping.get(last.labels![0])!);
             cfg.set(block, s);
         } else if (last && "op" in last && last.op === "br") {
-            const s = new Set<BrilInstruction[]>();
+            const s = new Set<BasicBlock>();
             s.add(mapping.get(last.labels![0])!);
             s.add(mapping.get(last.labels![1])!);
             cfg.set(block, s);
         } else if (last && "op" in last && last.op === "ret") {
             // Returns do not have a successor in my graph representation
         } else if (i !== arr.length - 1) {
-            const s = new Set<BrilInstruction[]>();
+            const s = new Set<BasicBlock>();
             s.add(arr[i + 1]);
             cfg.set(block, s);
         }
