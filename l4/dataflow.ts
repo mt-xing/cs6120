@@ -31,6 +31,7 @@ function reverseCfg(cfg: CFG): CFG {
 
 function extractFromSet<T>(x: Set<T>): T {
     for (const e of x) {
+        x.delete(e);
         return e;
     }
     throw new Error("Set is empty");
@@ -39,11 +40,11 @@ function extractFromSet<T>(x: Set<T>): T {
 export function dataflow<T>(
     cfg: CFG,
     forwards: boolean,
-    inB1: T,
+    inB1: (() => T),
     transfer: (b: BasicBlock, inB: T) => T,
     merge: (values: T[]) => T,
     eq: (a: T, b: T) => boolean,
-) {
+): Map<BasicBlock, T> {
     const revCfg = reverseCfg(cfg);
 
     const graph = forwards ? cfg : revCfg;
@@ -55,13 +56,13 @@ export function dataflow<T>(
 
     graph.forEach((_, block) => {
         if (block !== "START") {
-            outVals.set(block, inB1);
+            outVals.set(block, inB1());
             worklist.add(block);
         }
     });
     graphPred.forEach((_, block) => {
         if (block !== "START") {
-            outVals.set(block, inB1);
+            outVals.set(block, inB1());
             worklist.add(block);
         }
     });
@@ -70,7 +71,7 @@ export function dataflow<T>(
         const block = extractFromSet(worklist);
 
         const pred = graphPred.get(block);
-        const inVals = pred === undefined ? inB1 : merge(Array.from(pred).map(x => outVals.get(x)!));
+        const inVals = pred === undefined ? inB1() : merge(Array.from(pred).map(x => outVals.get(x)!));
         const ov = transfer(block, inVals);
         if (!eq(ov, outVals.get(block)!)) {
             outVals.set(block, ov);
