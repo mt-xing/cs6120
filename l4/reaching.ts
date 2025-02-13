@@ -24,7 +24,9 @@ export function reachingDefs(cfg: CFG): Map<BasicBlock, Map<string, BrilInstruct
                     if (candidate === undefined) {
                         r.set(key, entry);
                     } else {
-                        entry.forEach(x => candidate.push(x));
+                        const set = new Set<BrilInstruction>(candidate);
+                        entry.forEach(x => set.add(x));
+                        r.set(key, Array.from(set));
                     }
                 });
             });

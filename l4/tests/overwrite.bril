@@ -1,0 +1,19 @@
+@main() {
+    a: int = const 47;
+    b: int = const 42;
+    d: int = const 1;
+    br cond .left .right;
+  .left:
+    b: int = const 1;
+    c: int = const 5;
+    jmp .end;
+  .right:
+    a: int = const 2;
+    b: int = const 5;
+    c: int = const 10;
+    jmp .end;
+  .end:
+    d: int = sub a c;
+    print d;
+    ret;
+}
