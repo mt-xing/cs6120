@@ -1,23 +1,34 @@
-import { BasicBlock, CFG } from "../bril_shared/cfg.ts";
+import { BasicBlock, BrilInstruction, CFG } from "../bril_shared/cfg.ts";
 import { dataflow } from "./dataflow.ts";
 
-export function reachingDefs(cfg: CFG): Map<BasicBlock, Set<string>> {
-    return dataflow<Set<string>>(cfg, true, () => new Set(),
+function arrayEquals<T>(a: T[], b: T[]): boolean {
+    return a.length == b.length && a.every((x, i) => b[i] === x);
+}
+
+export function reachingDefs(cfg: CFG): Map<BasicBlock, Map<string, BrilInstruction[]>> {
+    return dataflow<Map<string, BrilInstruction[]>>(cfg, true, () => new Map(),
         (b, ins) => {
-            const set = new Set(ins);
+            const set = new Map(ins);
             b.forEach((instr) => {
                 if (!("op" in instr)) { return; }
                 if (instr.dest) {
-                    set.add(instr.dest);
+                    set.set(instr.dest, [instr]);
                 }
             });
             return set;
         }, (vals) => {
-            const r = new Set<string>();
-            vals.forEach(s => {
-                s.forEach(x => r.add(x));
+            const r = new Map<string, BrilInstruction[]>();
+            vals.forEach(m => {
+                m.forEach((entry, key) => {
+                    const candidate = r.get(key);
+                    if (candidate === undefined) {
+                        r.set(key, entry);
+                    } else {
+                        entry.forEach(x => candidate.push(x));
+                    }
+                });
             });
             return r;
-        }, (a, b) => a.size === b.size && Array.from(a).every(x => b.has(x))
+        }, (a, b) => a.size === b.size && Array.from(a).every(x => arrayEquals(x[1], b.get(x[0]) ?? []))
     );
 }
