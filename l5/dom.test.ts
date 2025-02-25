@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert/equals";
 import { BrilProgram, getCfgsFromProgram } from "../bril_shared/cfg.ts";
-import { pipeStringIntoCmdAndGetOutput } from "../bril_shared/io.ts";
+import { jsonStringify, pipeStringIntoCmdAndGetOutput } from "../bril_shared/io.ts";
 import { dominanceFrontier, dominanceGraph, dominanceTree } from "./dom.ts";
 import { NiceCfg, NiceCfgNode, niceifyCfg } from "./niceCfg.ts";
 import { walk, WalkEntry } from "@std/fs/walk";
@@ -24,8 +24,8 @@ function doesADominateB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode) {
     return aDomBPath(b, new Set([b]));
 }
 
-function assertADominatesB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode) {
-    assertEquals(doesADominateB(cfg, a, b), true);
+function assertADominatesB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode, filename: string, desc: string) {
+    assertEquals(doesADominateB(cfg, a, b), true, `${desc}: ${jsonStringify(a)} does not dominate ${jsonStringify(b)} in ${filename}`);
 }
 
 async function testFileForProperDominance(
@@ -44,16 +44,16 @@ async function testFileForProperDominance(
         const graph = dominanceGraph(cfg);
         graph.forEach((domSet, node) => {
             domSet.forEach((dom) => {
-                assertADominatesB(cfg, dom, node);
+                assertADominatesB(cfg, dom, node, filePath, "Dominance");
             })
         });
 
         const tree = dominanceTree(graph);
         function checkTreeDoms(node: ReturnType<typeof dominanceTree>, prev: ReturnType<typeof dominanceTree>) {
             node.forEach((c) => {
-                assertADominatesB(cfg, "ENTRY", c.block);
+                assertADominatesB(cfg, "ENTRY", c.block, filePath, "Dom Tree Entry");
                 prev.forEach((p) => {
-                    assertADominatesB(cfg, p.block, c.block);
+                    assertADominatesB(cfg, p.block, c.block, filePath, "Dom Tree Children");
                 });
                 checkTreeDoms(c.children, prev.union(new Set([c])));
             });
@@ -63,9 +63,9 @@ async function testFileForProperDominance(
         const frontier = dominanceFrontier(graph);
         frontier.forEach((frontier, node) => {
             frontier.forEach((frontierNode) => {
-                assertEquals(doesADominateB(cfg, node, frontierNode), false);
+                assertEquals(doesADominateB(cfg, node, frontierNode), false, `Dom Frontier not itself: ${jsonStringify(node)} dominates ${jsonStringify(frontierNode)} in ${filePath}`);
                 const preds = frontierNode === "EXIT" ? cfg.exit : frontierNode.preds;
-                assertEquals(Array.from(preds).some((x) => doesADominateB(cfg, node, x)), true);
+                assertEquals(Array.from(preds).some((x) => doesADominateB(cfg, node, x)), true, `Dom Frontier: ${jsonStringify(node)} does not dominate ${jsonStringify(frontierNode)} in ${filePath}`);
             })
         });
     });
