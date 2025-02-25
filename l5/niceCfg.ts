@@ -1,5 +1,7 @@
 import { BasicBlock, CFG, getCfgsFromCmdLine } from "../bril_shared/cfg.ts";
 
+export type NiceCfgNode = CfgBlockNode | "ENTRY" | "EXIT";
+
 export type CfgBlockNode = {
     block: BasicBlock;
     preds: Set<CfgBlockNode | "ENTRY">;

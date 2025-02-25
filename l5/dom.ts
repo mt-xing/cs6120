@@ -1,7 +1,8 @@
-import { CfgBlockNode, NiceCfg } from "./niceCfg.ts";
+import { CfgBlockNode, NiceCfg, NiceCfgNode } from "./niceCfg.ts";
 
 /**
- * Mapping from block to the blocks that dominate it
+ * Mapping from block to the blocks that dominate it.
+ * Note "ENTRY" implicitly dominates all blocks.
  */
 type DomGraph = Map<CfgBlockNode | "EXIT", Set<CfgBlockNode | "EXIT">>;
 
@@ -53,11 +54,11 @@ export function dominanceGraph(cfg: NiceCfg) {
     return dom;
 }
 
-export function printGraph(graph: Map<CfgBlockNode | "EXIT" | "START", Set<CfgBlockNode | "EXIT">>) {
-    const getBlockString = (b: CfgBlockNode | "EXIT" | "START"): string => {
+export function printGraph(graph: Map<NiceCfgNode, Set<CfgBlockNode | "EXIT">>) {
+    const getBlockString = (b: NiceCfgNode): string => {
         if (b === "EXIT") {
             return "Exit";
-        } else if (b === "START") {
+        } else if (b === "ENTRY") {
             return "Start";
         }
         return JSON.stringify(b.block);
@@ -127,10 +128,10 @@ function reverseMap<T, U>(x: Map<T, Set<U>>): Map<U, Set<T>> {
 }
 
 export function dominanceFrontier(graph: DomGraph) {
-    const mapOfDoms: Map<CfgBlockNode | "EXIT" | "START", Set<CfgBlockNode | "EXIT">> = reverseMap(graph);
-    mapOfDoms.set("START", new Set(graph.keys()));
+    const mapOfDoms: Map<NiceCfgNode, Set<CfgBlockNode | "EXIT">> = reverseMap(graph);
+    mapOfDoms.set("ENTRY", new Set(graph.keys()));
 
-    const o = new Map<CfgBlockNode | "START", Set<CfgBlockNode | "EXIT">>();
+    const o = new Map<CfgBlockNode | "ENTRY", Set<CfgBlockNode | "EXIT">>();
 
     mapOfDoms.forEach((domSet, node) => {
         const result = new Set<CfgBlockNode | "EXIT">();
