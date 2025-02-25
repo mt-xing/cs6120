@@ -16,6 +16,9 @@ export function printCfgNode(n: NiceCfgNode) {
     if (n === "EXIT") {
         return "Exit";
     }
+    if (!n.block) {
+        return "undefined";
+    }
     if (n.block.length > 0) {
         const firstInstr = n.block[0];
         if ("label" in firstInstr) {

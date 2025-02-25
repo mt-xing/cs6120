@@ -38,11 +38,14 @@ export function dominanceGraph(cfg: NiceCfg) {
             let predIntersect: Set<CfgBlockNode | "EXIT"> | null = null;
 
             for (const pred of (block === "EXIT" ? exitPreds : block.preds)) {
-                if (pred === "ENTRY") { continue; }
-                if (predIntersect === null) {
-                    predIntersect = new Set(getDom(pred));
+                if (pred === "ENTRY") { 
+                    predIntersect = new Set();
                 } else {
-                    predIntersect = predIntersect.intersection(getDom(pred));
+                    if (predIntersect === null) {
+                        predIntersect = new Set(getDom(pred));
+                    } else if (pred !== block) {
+                        predIntersect = predIntersect.intersection(getDom(pred));
+                    }
                 }
             }
 

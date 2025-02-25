@@ -14,6 +14,10 @@ function doesADominateB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode) {
             return false;
         }
         const preds = currentNode === "EXIT" ? cfg.exit : currentNode.preds;
+        // Unreachable node; pretend it also points to entry for consistency 
+        if (preds.size === 0) {
+            return a === "ENTRY";
+        }
         return Array.from(preds).every((pred): boolean => {
             if (pred === a) { return true; }
             if (pred === "ENTRY") { return false; }
