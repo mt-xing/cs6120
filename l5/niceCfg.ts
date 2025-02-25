@@ -1,12 +1,34 @@
 import { BasicBlock, CFG, getCfgsFromCmdLine } from "../bril_shared/cfg.ts";
-
-export type NiceCfgNode = CfgBlockNode | "ENTRY" | "EXIT";
+import { jsonStringify } from "../bril_shared/io.ts";
 
 export type CfgBlockNode = {
     block: BasicBlock;
     preds: Set<CfgBlockNode | "ENTRY">;
     succs: Set<CfgBlockNode | "EXIT">;
 };
+
+export type NiceCfgNode = CfgBlockNode | "ENTRY" | "EXIT";
+
+export function printCfgNode(n: NiceCfgNode) {
+    if (n === "ENTRY") {
+        return "Entry";
+    }
+    if (n === "EXIT") {
+        return "Exit";
+    }
+    if (n.block.length > 0) {
+        const firstInstr = n.block[0];
+        if ("label" in firstInstr) {
+            return firstInstr.label;
+        }
+    }
+    const str = jsonStringify(n.block);
+    const MAX_LENGTH = 64;
+    if (str.length <= MAX_LENGTH) {
+        return str;
+    }
+    return str.substring(0, MAX_LENGTH) + "...";
+}
 
 export type NiceCfg = {
     blocks: Set<CfgBlockNode>;

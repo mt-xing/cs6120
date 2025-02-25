@@ -1,8 +1,8 @@
 import { assertEquals } from "@std/assert/equals";
 import { BrilProgram, getCfgsFromProgram } from "../bril_shared/cfg.ts";
-import { jsonStringify, pipeStringIntoCmdAndGetOutput } from "../bril_shared/io.ts";
+import { pipeStringIntoCmdAndGetOutput } from "../bril_shared/io.ts";
 import { dominanceFrontier, dominanceGraph, dominanceTree } from "./dom.ts";
-import { NiceCfg, NiceCfgNode, niceifyCfg } from "./niceCfg.ts";
+import { NiceCfg, NiceCfgNode, niceifyCfg, printCfgNode } from "./niceCfg.ts";
 import { walk, WalkEntry } from "@std/fs/walk";
 
 function doesADominateB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode) {
@@ -25,7 +25,7 @@ function doesADominateB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode) {
 }
 
 function assertADominatesB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode, filename: string, desc: string) {
-    assertEquals(doesADominateB(cfg, a, b), true, `${desc}: ${jsonStringify(a)} does not dominate ${jsonStringify(b)} in ${filename}`);
+    assertEquals(doesADominateB(cfg, a, b), true, `${desc}: ${printCfgNode(a)} does not dominate ${printCfgNode(b)} in ${filename}`);
 }
 
 async function testFileForProperDominance(
@@ -63,9 +63,9 @@ async function testFileForProperDominance(
         const frontier = dominanceFrontier(graph);
         frontier.forEach((frontier, node) => {
             frontier.forEach((frontierNode) => {
-                assertEquals(doesADominateB(cfg, node, frontierNode), false, `Dom Frontier not itself: ${jsonStringify(node)} dominates ${jsonStringify(frontierNode)} in ${filePath}`);
+                assertEquals(doesADominateB(cfg, node, frontierNode), false, `Dom Frontier not itself: ${printCfgNode(node)} dominates ${printCfgNode(frontierNode)} in ${filePath}`);
                 const preds = frontierNode === "EXIT" ? cfg.exit : frontierNode.preds;
-                assertEquals(Array.from(preds).some((x) => doesADominateB(cfg, node, x)), true, `Dom Frontier: ${jsonStringify(node)} does not dominate ${jsonStringify(frontierNode)} in ${filePath}`);
+                assertEquals(Array.from(preds).some((x) => doesADominateB(cfg, node, x)), true, `Dom Frontier: ${printCfgNode(node)} does not dominate ${printCfgNode(frontierNode)} in ${filePath}`);
             })
         });
     });

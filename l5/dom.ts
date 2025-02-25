@@ -1,4 +1,4 @@
-import { CfgBlockNode, NiceCfg, NiceCfgNode } from "./niceCfg.ts";
+import { CfgBlockNode, NiceCfg, NiceCfgNode, printCfgNode } from "./niceCfg.ts";
 
 /**
  * Mapping from block to the blocks that dominate it.
@@ -22,12 +22,17 @@ export function dominanceGraph(cfg: NiceCfg) {
     const blockList: Set<CfgBlockNode | "EXIT"> = new Set(cfg.blocks);
     blockList.add("EXIT");
 
+    blockList.forEach((block) => {
+        dom.set(block, new Set(blockList));
+    });
+
     let change = true;
     while (change) {
         change = false;
         blockList.forEach((block) => {
             const domSet = getDom(block);
             const originalSize = domSet.size;
+            domSet.clear();
             domSet.add(block);
 
             let predIntersect: Set<CfgBlockNode | "EXIT"> | null = null;
@@ -54,20 +59,21 @@ export function dominanceGraph(cfg: NiceCfg) {
     return dom;
 }
 
-export function printGraph(graph: Map<NiceCfgNode, Set<CfgBlockNode | "EXIT">>) {
+export function printGraph(graph: Map<NiceCfgNode, Set<CfgBlockNode | "EXIT">>, label: string) {
     const getBlockString = (b: NiceCfgNode): string => {
         if (b === "EXIT") {
             return "Exit";
         } else if (b === "ENTRY") {
             return "Start";
         }
-        return JSON.stringify(b.block);
+        return printCfgNode(b);
     };
 
     graph.forEach((doms, block) => {
         console.log(`Node: ${getBlockString(block)}`);
-        console.log("Doms:");
+        console.log(`${label}:`);
         doms.forEach(d => console.log(`-\t${getBlockString(d)}`));
+        console.log();
     });
 }
 
@@ -103,7 +109,7 @@ export function dominanceTree(graph: DomGraph) {
 export function printDominanceTree(tree: Set<DomTreeNode>, block?: CfgBlockNode | "EXIT", indent?: number) {
     const i = indent === undefined ? 0 : indent;
     const spacing = Array.from(new Array(i)).reduce(a => a + "\t", "");
-    const blockText = block === undefined ? "ENTRY" : (block === "EXIT" ? "EXIT" : JSON.stringify(block.block));
+    const blockText = block === undefined ? "ENTRY" : printCfgNode(block);
     console.log(`${spacing}|- ${blockText}`);
     tree.forEach(c => {
         printDominanceTree(c.children, c.block, (indent ?? 0) + 1);
