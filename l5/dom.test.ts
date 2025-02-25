@@ -32,6 +32,10 @@ function assertADominatesB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode, filenam
     assertEquals(doesADominateB(cfg, a, b), true, `${desc}: ${printCfgNode(a)} does not dominate ${printCfgNode(b)} in ${filename}`);
 }
 
+function assertADoesNotDominateB(cfg: NiceCfg, a: NiceCfgNode, b: NiceCfgNode, filename: string, desc: string) {
+    assertEquals(doesADominateB(cfg, a, b), false, `${desc}: ${printCfgNode(a)} dominates ${printCfgNode(b)} in ${filename}`);
+}
+
 async function testFileForProperDominance(
     filePath: string,
 ) {
@@ -49,6 +53,11 @@ async function testFileForProperDominance(
         graph.forEach((domSet, node) => {
             domSet.forEach((dom) => {
                 assertADominatesB(cfg, dom, node, filePath, "Dominance");
+            });
+            cfg.blocks.forEach((b) => {
+                if (!domSet.has(b)) {
+                    assertADoesNotDominateB(cfg, b, node, filePath, "!Dominance");
+                }
             })
         });
 
