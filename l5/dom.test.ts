@@ -97,4 +97,4 @@ function dominanceTest(folders: string[]) {
     });
 }
 
-dominanceTest(["../l4/tests"]);
+dominanceTest(["../bril_tests"]);
