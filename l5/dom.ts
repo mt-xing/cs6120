@@ -1,5 +1,8 @@
 import { CfgBlockNode, NiceCfg } from "./niceCfg.ts";
 
+/**
+ * Mapping from block to the blocks that dominate it
+ */
 type DomGraph = Map<CfgBlockNode | "EXIT", Set<CfgBlockNode | "EXIT">>;
 
 export function dominanceGraph(cfg: NiceCfg) {
@@ -50,10 +53,12 @@ export function dominanceGraph(cfg: NiceCfg) {
     return dom;
 }
 
-export function printGraph(graph: DomGraph) {
-    const getBlockString = (b: CfgBlockNode | "EXIT"): string => {
+export function printGraph(graph: Map<CfgBlockNode | "EXIT" | "START", Set<CfgBlockNode | "EXIT">>) {
+    const getBlockString = (b: CfgBlockNode | "EXIT" | "START"): string => {
         if (b === "EXIT") {
             return "Exit";
+        } else if (b === "START") {
+            return "Start";
         }
         return JSON.stringify(b.block);
     };
@@ -102,4 +107,46 @@ export function printDominanceTree(tree: Set<DomTreeNode>, block?: CfgBlockNode 
     tree.forEach(c => {
         printDominanceTree(c.children, c.block, (indent ?? 0) + 1);
     });
+}
+
+function reverseMap<T, U>(x: Map<T, Set<U>>): Map<U, Set<T>> {
+    const oMap = new Map<U, Set<T>>();
+    const get = (u: U) => {
+        const candidate = oMap.get(u);
+        if (candidate !== undefined) { return candidate; }
+        const o = new Set<T>();
+        oMap.set(u, o);
+        return o;
+    }
+    x.forEach((valSet, key) => {
+        valSet.forEach((val) => {
+            get(val).add(key);
+        });
+    });
+    return oMap;
+}
+
+export function dominanceFrontier(graph: DomGraph) {
+    const mapOfDoms: Map<CfgBlockNode | "EXIT" | "START", Set<CfgBlockNode | "EXIT">> = reverseMap(graph);
+    mapOfDoms.set("START", new Set(graph.keys()));
+
+    const o = new Map<CfgBlockNode | "START", Set<CfgBlockNode | "EXIT">>();
+
+    mapOfDoms.forEach((domSet, node) => {
+        const result = new Set<CfgBlockNode | "EXIT">();
+        if (node === "EXIT") { return; }
+        o.set(node, result);
+
+        domSet.forEach((x) => {
+            if (x !== "EXIT") {
+                x.succs.forEach((c) => {
+                    if (!domSet.has(c)) {
+                        result.add(c);
+                    }
+                });
+            }
+        })
+    });
+
+    return o;
 }
