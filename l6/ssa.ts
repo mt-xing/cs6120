@@ -149,3 +149,31 @@ export function ssaProgram(p: BrilProgram) {
 
     return finalProgram;
 }
+
+export function outOfSsa(cfg: NiceCfg) {
+    cfg.blocks.forEach(x => {
+        x.block = x.block.filter((x) => !("op" in x) || x.op !== "get");
+        x.block.forEach((instr) => {
+            if ("op" in instr && instr.op === "set") {
+                instr.op = "id";
+                const oldArgs = instr.args!;
+                instr.args = [oldArgs[1]];
+                instr.dest = oldArgs[0];
+            }
+        });
+    });
+}
+
+export function programOutOfSsa(p: BrilProgram) {
+    p.functions.forEach((f) => {
+        f.instrs = f.instrs.filter((x) => !("op" in x) || x.op !== "get");
+        f.instrs.forEach((instr) => {
+            if ("op" in instr && instr.op === "set") {
+                instr.op = "id";
+                const oldArgs = instr.args!;
+                instr.args = [oldArgs[1]];
+                instr.dest = oldArgs[0];
+            }
+        });
+    });
+}
