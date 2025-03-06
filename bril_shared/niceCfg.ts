@@ -121,7 +121,7 @@ export function cfgToFn(cfg: NiceCfg): BrilInstruction[] {
     function processNode1(n: CfgBlockNode) {
         if (printedNodes1.has(n)) { return; }
         printedNodes1.add(n);
-        const lastInstr = n.block.length > 0 ? n.block[n.block.length - 1] : {};
+        const lastInstr: BrilInstruction | Record<string | number | symbol, never> = n.block.length > 0 ? n.block[n.block.length - 1] : {};
         const opToSwitch = "op" in lastInstr ? lastInstr.op : "NONE";
         switch (opToSwitch) {
             case "jmp":
@@ -129,16 +129,29 @@ export function cfgToFn(cfg: NiceCfg): BrilInstruction[] {
             case "ret":
                 break;
             default: {
-                if (n.succs.size !== 1) {
-                    if (n.succs.size === 0) {
-                        n.block.push({
-                            op: "ret"
-                        });
-                        break;
-                    }
-                    throw new Error("Non-branch instruction with multiple succs");
+                if (n.succs.size === 0) {
+                    n.block.push({
+                        op: "ret"
+                    });
+                    break;
                 }
-                const succ = getFromSet(n.succs);
+                let succ = getFromSet(n.succs);
+                if (n.succs.size !== 1) {
+                    if (opToSwitch === "guard" && n.succs.size === 2) {
+                        for (const s of n.succs) {
+                            if (!("op" in lastInstr)) {
+                                throw new Error();
+                            }
+                            if (s !== "EXIT" && s.block.length > 0 && "label" in s.block[0] && s.block[0].label === lastInstr.labels![0]) {
+                                continue;
+                            }
+                            succ = s;
+                            break;
+                        }
+                    } else {
+                        throw new Error("Non-branch instruction with multiple succs");
+                    }
+                }
                 if (succ === "EXIT") {
                     n.block.push({
                         op: "ret"

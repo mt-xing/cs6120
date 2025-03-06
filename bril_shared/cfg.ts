@@ -94,6 +94,11 @@ export function getCfg(blocks: BasicBlock[], mapping: Map<string, BasicBlock>): 
             cfg.set(block, s);
         } else if (last && "op" in last && last.op === "ret") {
             // Returns do not have a successor in my graph representation
+        } else if (last && "op" in last && last.op === "guard") {
+            const s = new Set<BasicBlock>();
+            s.add(arr[i + 1]);
+            s.add(getMapping(last.labels![0]));
+            cfg.set(block, s);
         } else if (i !== arr.length - 1) {
             const s = new Set<BasicBlock>();
             s.add(arr[i + 1]);
