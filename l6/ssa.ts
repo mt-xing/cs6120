@@ -196,6 +196,19 @@ export function ssa(cfg: NiceCfg, args: string[]): string[] {
     return finalArgs;
 }
 
+function getAllReadVars(x: BrilInstruction[], args?: string[]) {
+    const vars = new Set<string>();
+    x.forEach((instr) => {
+        if ("op" in instr) {
+            instr.args?.forEach((x) => {
+                vars.add(x);
+            })
+        }
+    });
+    args?.forEach((x) => vars.delete(x));
+    return vars;
+}
+
 export function ssaProgram(p: BrilProgram) {
     const cfgs: Record<string, NiceCfg> = {};
     const args: Record<string, string[]> = {};
@@ -204,15 +217,27 @@ export function ssaProgram(p: BrilProgram) {
         const cfg = getCfg(blocks, mapping);
         const name = fn.name;
         cfgs[name] = niceifyCfg(cfg);
+        // args[name] = (fn.args?.map(x => x.name)) ?? [];
         args[name] = ssa(cfgs[name], fn.args?.map(x => x.name) ?? []);
     });
     
     const finalProgram: BrilProgram = {
-        functions: p.functions.map((f) => ({
-            ...f,
-            instrs: cfgToFn(cfgs[f.name]),
-            args: f.args?.map((a, i) => ({...a, name: args[f.name][i]})) ?? undefined,
-        })),
+        functions: p.functions.map((f) => {
+            const newInstrs = cfgToFn(cfgs[f.name]);
+            const newArgs = f.args?.map((a, i) => ({...a, name: args[f.name][i]})) ?? undefined;
+            const readVars = getAllReadVars(newInstrs, newArgs?.map(x => x.name));
+            const setup: BrilInstruction[] = Array.from(readVars).map((x) => {
+                return {
+                    op: "undef",
+                    dest: x,
+                }
+            });
+            return {
+                ...f,
+                instrs: setup.concat(newInstrs),
+                args: newArgs,
+            };
+        }),
     };
 
     return finalProgram;

@@ -110,6 +110,10 @@ function getFromSet<T>(x: Set<T>): T {
 export function cfgToFn(cfg: NiceCfg): BrilInstruction[] {
     const o: BrilInstruction[] = [];
 
+    if (cfg.blocks.size === 0) {
+        return [];
+    }
+
     if (cfg.entry.size !== 1) {
         throw new Error("Number of start nodes not equal to 1: " + cfg.entry.size);
     }
