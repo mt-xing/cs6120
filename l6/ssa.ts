@@ -1,7 +1,8 @@
+import { BrilProgram, getCfgsFromProgram } from "../bril_shared/cfg.ts";
 import { newName } from "../bril_shared/newName.ts";
-import { NiceCfg } from "../bril_shared/niceCfg.ts";
+import { cfgToFn, NiceCfg } from "../bril_shared/niceCfg.ts";
 import { dominanceGraph, dominanceFrontier, dominanceTree } from "../l5/dom.ts";
-import { CfgBlockNode } from "../l5/niceCfg.ts";
+import { CfgBlockNode, niceifyCfg } from "../l5/niceCfg.ts";
 
 function computeDomTreeLookup(
     tree: ReturnType<typeof dominanceTree>,
@@ -128,4 +129,23 @@ export function ssa(cfg: NiceCfg) {
             u.args[0] = phiNode.dest;
         })
     });
+}
+
+export function ssaProgram(p: BrilProgram) {
+    const rawCfgs = getCfgsFromProgram(p);
+    
+    const cfgs: Record<string, NiceCfg> = {};
+    Object.entries(rawCfgs).forEach(([name, cfg]) => {
+        cfgs[name] = niceifyCfg(cfg);
+        ssa(cfgs[name]);
+    });
+    
+    const finalProgram: BrilProgram = {
+        functions: p.functions.map((f) => ({
+            ...f,
+            instrs: cfgToFn(cfgs[f.name]),
+        })),
+    };
+
+    return finalProgram;
 }
