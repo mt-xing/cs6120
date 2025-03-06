@@ -29,7 +29,7 @@ function reverseCfg(cfg: CFG): CFG {
     return r;
 }
 
-function extractFromSet<T>(x: Set<T>): T {
+export function extractFromSet<T>(x: Set<T>): T {
     for (const e of x) {
         x.delete(e);
         return e;

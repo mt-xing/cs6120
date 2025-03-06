@@ -1,12 +1,7 @@
+import { newName } from "../bril_shared/newName.ts";
 import { NiceCfg } from "../bril_shared/niceCfg.ts";
 import { dominanceGraph, dominanceFrontier, dominanceTree } from "../l5/dom.ts";
 import { CfgBlockNode } from "../l5/niceCfg.ts";
-
-let nameCounter = 0;
-
-function newName(oldName: string) {
-    return `${oldName}:${nameCounter++}:${Math.random().toString(36).substring(2)}`
-}
 
 function computeDomTreeLookup(
     tree: ReturnType<typeof dominanceTree>,
@@ -69,6 +64,8 @@ export function ssa(cfg: NiceCfg) {
         });
     });
 
+    const allPhis = new Map<{op: "get", dest: string}, Set<{op: "set", args: string[]}>>();
+
     const varStack: Record<string, string[]> = {};
     varDefs.forEach((_, varName) => {
         varStack[varName] = [varName];
@@ -95,7 +92,18 @@ export function ssa(cfg: NiceCfg) {
             if (s === "EXIT") { return; }
             s.block.forEach((p) => {
                 if ("op" in p && p.op === "get") {
-                    p.dest = varStack[p.dest!][varStack[p.dest!].length - 1];
+                    const v = p.dest!;
+                    const upsilon = {
+                        op: "set" as const,
+                        args: [v, varStack[v][varStack[v].length - 1]],
+                    };
+                    block.block.push(upsilon);
+                    const candidate = allPhis.get(p as {op: "get", dest: string});
+                    if (candidate === undefined) {
+                        allPhis.set(p as {op: "get", dest: string}, new Set([upsilon]));
+                    } else {
+                        candidate.add(upsilon);
+                    }
                 }
             });
         });
@@ -113,5 +121,11 @@ export function ssa(cfg: NiceCfg) {
         if (x.block !== "EXIT") {
             rename(x.block);
         }
+    });
+
+    allPhis.forEach((upsilonNodes, phiNode) => {
+        upsilonNodes.forEach((u) => {
+            u.args[0] = phiNode.dest;
+        })
     });
 }
