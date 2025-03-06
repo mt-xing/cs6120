@@ -1,8 +1,7 @@
-import { BasicBlock, BrilInstruction, BrilProgram, getCfgsFromProgram } from "../bril_shared/cfg.ts";
+import { BasicBlock, BrilInstruction, BrilProgram, getBlocks, getCfg, getCfgsFromProgram } from "../bril_shared/cfg.ts";
 import { newName } from "../bril_shared/newName.ts";
-import { cfgToFn, NiceCfg } from "../bril_shared/niceCfg.ts";
+import { CfgBlockNode, cfgToFn, NiceCfg, niceifyCfg } from "../bril_shared/niceCfg.ts";
 import { dominanceGraph, dominanceFrontier, dominanceTree } from "../l5/dom.ts";
-import { CfgBlockNode, niceifyCfg } from "../l5/niceCfg.ts";
 
 function computeDomTreeLookup(
     tree: ReturnType<typeof dominanceTree>,
@@ -61,7 +60,7 @@ function addInstrToBlock(block: CfgBlockNode, instr: BrilInstruction, beginning:
     }
 }
 
-export function ssa(cfg: NiceCfg) {
+export function ssa(cfg: NiceCfg, args: string[]): string[] {
     const domGraph = dominanceGraph(cfg);
     const domFrontier = dominanceFrontier(domGraph);
     const domTree = dominanceTree(domGraph);
@@ -114,13 +113,23 @@ export function ssa(cfg: NiceCfg) {
         varStack[varName] = [varName];
         ogNameLookup.set(varName, varName);
     });
+    args.forEach((varName) => {
+        varStack[varName] = [varName];
+        ogNameLookup.set(varName, varName);
+    });
     const rename = (block: CfgBlockNode) => {
         const stuffToPop: string[][] = [];
         block.block.forEach((instr) => {
             if (!("op" in instr)) { return; }
 
             if (instr.args) {
-                instr.args = instr.args.map(oldName => varStack[oldName][varStack[oldName].length - 1]);
+                instr.args = instr.args.map(oldNameOg => {
+                    const oldName = ogNameLookup.get(oldNameOg) ?? oldNameOg;
+                    if (!varStack[oldName]) {
+                        console.error(oldName, instr, varStack);
+                    }
+                    return varStack[oldName][varStack[oldName].length - 1];
+                });
             }
 
             if (instr.dest) {
@@ -164,6 +173,14 @@ export function ssa(cfg: NiceCfg) {
         // Pop all the names we pushed
         stuffToPop.forEach(x => x.pop());
     };
+
+    const finalArgs = args.map((oldName) => {
+        const n = newName(oldName);
+        varStack[oldName].push(n);
+        ogNameLookup.set(n, oldName);
+        return n;
+    });
+
     domTree.forEach(x => {
         if (x.block !== "EXIT") {
             rename(x.block);
@@ -175,21 +192,26 @@ export function ssa(cfg: NiceCfg) {
             u.args[0] = phiNode.dest;
         })
     });
+
+    return finalArgs;
 }
 
 export function ssaProgram(p: BrilProgram) {
-    const rawCfgs = getCfgsFromProgram(p);
-    
     const cfgs: Record<string, NiceCfg> = {};
-    Object.entries(rawCfgs).forEach(([name, cfg]) => {
+    const args: Record<string, string[]> = {};
+    p.functions.forEach(fn => {
+        const {blocks, mapping} = getBlocks(fn.instrs);
+        const cfg = getCfg(blocks, mapping);
+        const name = fn.name;
         cfgs[name] = niceifyCfg(cfg);
-        ssa(cfgs[name]);
-    });
+        args[name] = ssa(cfgs[name], fn.args?.map(x => x.name) ?? []);
+    })
     
     const finalProgram: BrilProgram = {
         functions: p.functions.map((f) => ({
             ...f,
             instrs: cfgToFn(cfgs[f.name]),
+            args: f.args?.map((a, i) => ({...a, name: args[f.name][i]})) ?? undefined,
         })),
     };
 

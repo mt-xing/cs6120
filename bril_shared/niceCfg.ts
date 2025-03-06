@@ -47,6 +47,10 @@ export function niceifyCfg(cfg: CFG): NiceCfg {
 
     const niceBlockLookup = new Map<BasicBlock, CfgBlockNode>();
     const getNiceBlock = (b: BasicBlock): CfgBlockNode => {
+        if (b === undefined) {
+            console.error(b, niceBlockLookup);
+            throw new Error("w");
+        }
         const candidate = niceBlockLookup.get(b);
         if (candidate !== undefined) {
             return candidate;
@@ -118,6 +122,12 @@ export function cfgToFn(cfg: NiceCfg): BrilInstruction[] {
                         break;
                     default: {
                         if (n.succs.size !== 1) {
+                            if (n.succs.size === 0) {
+                                n.block.push({
+                                    op: "ret"
+                                });
+                                break;
+                            }
                             throw new Error("Non-branch instruction with multiple succs");
                         }
                         const succ = extractFromSet(n.succs);

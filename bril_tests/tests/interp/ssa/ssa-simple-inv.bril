@@ -2,6 +2,7 @@
 @main(cond: bool) {
 .top:
   a: int = const 5;
+  cond: bool = const true;
   br cond .here .there;
 .here:
   b: int = const 7;
