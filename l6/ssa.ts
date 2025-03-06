@@ -205,7 +205,7 @@ export function ssaProgram(p: BrilProgram) {
         const name = fn.name;
         cfgs[name] = niceifyCfg(cfg);
         args[name] = ssa(cfgs[name], fn.args?.map(x => x.name) ?? []);
-    })
+    });
     
     const finalProgram: BrilProgram = {
         functions: p.functions.map((f) => ({

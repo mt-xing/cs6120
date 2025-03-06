@@ -66,6 +66,14 @@ export type CFG = Map<"START" | BasicBlock, Set<BasicBlock>>;
  */
 export function getCfg(blocks: BasicBlock[], mapping: Map<string, BasicBlock>): CFG {
     const cfg = new Map<"START" | BasicBlock, Set<BasicBlock>>();
+    const getMapping = (labelName: string) => {
+        const candidate = mapping.get(labelName);
+        if (candidate === undefined) {
+            console.error(labelName, mapping);
+            throw new Error("No block by name " + labelName);
+        }
+        return candidate;
+    };
     
     if (blocks.length > 0) {
         const s = new Set<BasicBlock>();
@@ -77,12 +85,12 @@ export function getCfg(blocks: BasicBlock[], mapping: Map<string, BasicBlock>): 
         const last = block.length > 0 ? block[block.length - 1] : undefined;
         if (last && "op" in last && last.op === "jmp") {
             const s = new Set<BasicBlock>();
-            s.add(mapping.get(last.labels![0])!);
+            s.add(getMapping(last.labels![0]));
             cfg.set(block, s);
         } else if (last && "op" in last && last.op === "br") {
             const s = new Set<BasicBlock>();
-            s.add(mapping.get(last.labels![0])!);
-            s.add(mapping.get(last.labels![1])!);
+            s.add(getMapping(last.labels![0]));
+            s.add(getMapping(last.labels![1]));
             cfg.set(block, s);
         } else if (last && "op" in last && last.op === "ret") {
             // Returns do not have a successor in my graph representation
