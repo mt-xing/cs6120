@@ -1,4 +1,4 @@
-import { BasicBlock, BrilInstruction, BrilProgram, getBlocks, getCfg, getCfgsFromProgram } from "../bril_shared/cfg.ts";
+import { BasicBlock, BrilInstruction, BrilProgram, getBlocks, getCfg } from "../bril_shared/cfg.ts";
 import { newName } from "../bril_shared/newName.ts";
 import { CfgBlockNode, cfgToFn, NiceCfg, niceifyCfg } from "../bril_shared/niceCfg.ts";
 import { dominanceGraph, dominanceFrontier, dominanceTree } from "../l5/dom.ts";
