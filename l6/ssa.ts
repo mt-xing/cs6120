@@ -1,4 +1,4 @@
-import { BrilProgram, getCfgsFromProgram } from "../bril_shared/cfg.ts";
+import { BasicBlock, BrilInstruction, BrilProgram, getCfgsFromProgram } from "../bril_shared/cfg.ts";
 import { newName } from "../bril_shared/newName.ts";
 import { cfgToFn, NiceCfg } from "../bril_shared/niceCfg.ts";
 import { dominanceGraph, dominanceFrontier, dominanceTree } from "../l5/dom.ts";
@@ -18,6 +18,47 @@ function computeDomTreeLookup(
         }
     });
     return m;
+}
+
+function addInstrToBlock(block: CfgBlockNode, instr: BrilInstruction, beginning: boolean) {
+    const list = block.block;
+    if (list.length === 0) {
+        list.push(instr);
+        return;
+    }
+    if (beginning) {
+        if (!("label" in list[0])) {
+            list.unshift(instr);
+            return;
+        }
+        const newList: BasicBlock = [];
+        newList.push(list[0]);
+        newList.push(instr);
+        for (let i = 1; i < list.length; i++) {
+            newList.push(list[i]);
+        }
+        block.block = newList;
+        return;
+    } else {
+        const lastNode = list[list.length - 1];
+        if (!("op" in lastNode)) {
+            list.push(instr);
+            return;
+        }
+        switch (lastNode.op) {
+            case "jmp":
+            case "br":
+            case "ret":
+                break;
+            default: 
+                list.push(instr);
+                return;
+        }
+        list.pop();
+        list.push(instr);
+        list.push(lastNode);
+        return;
+    }
 }
 
 export function ssa(cfg: NiceCfg) {
@@ -49,10 +90,10 @@ export function ssa(cfg: NiceCfg) {
                 const setOfExistingPhis = existingPhis.get(block);
                 // Add phi node to block unless already there
                 if (!setOfExistingPhis || !setOfExistingPhis.has(varName)) {
-                    block.block.unshift({
+                    addInstrToBlock(block, {
                         op: "get",
                         dest: varName
-                    });
+                    }, true);
                     const s = setOfExistingPhis ?? new Set<string>();
                     s.add(varName);
                     if (!setOfExistingPhis) {
@@ -98,7 +139,9 @@ export function ssa(cfg: NiceCfg) {
                         op: "set" as const,
                         args: [v, varStack[v][varStack[v].length - 1]],
                     };
-                    block.block.push(upsilon);
+
+                    addInstrToBlock(block, upsilon, false);
+                    
                     const candidate = allPhis.get(p as {op: "get", dest: string});
                     if (candidate === undefined) {
                         allPhis.set(p as {op: "get", dest: string}, new Set([upsilon]));
