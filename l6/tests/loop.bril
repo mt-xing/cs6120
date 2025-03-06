@@ -1,0 +1,17 @@
+@main {
+    a: int = const 1;
+    b: int = const 2;
+    c: int = add a b;
+    jmp .looptop;
+  .looptop:
+    one: int = const 1;
+    a: int = add a one;
+    cond: bool = lt a b;
+    br cond .loopbody .loopdone;
+  .loopdone:
+    z: int = const 42;
+    ret;
+  .loopbody:
+    c: int = add c one;
+    jmp .looptop;
+}

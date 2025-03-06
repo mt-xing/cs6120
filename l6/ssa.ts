@@ -109,8 +109,10 @@ export function ssa(cfg: NiceCfg) {
     const allPhis = new Map<{op: "get", dest: string}, Set<{op: "set", args: string[]}>>();
 
     const varStack: Record<string, string[]> = {};
+    const ogNameLookup = new Map<string, string>();
     varDefs.forEach((_, varName) => {
         varStack[varName] = [varName];
+        ogNameLookup.set(varName, varName);
     });
     const rename = (block: CfgBlockNode) => {
         const stuffToPop: string[][] = [];
@@ -122,10 +124,11 @@ export function ssa(cfg: NiceCfg) {
             }
 
             if (instr.dest) {
-                const oldName = instr.dest;
+                const oldName = ogNameLookup.get(instr.dest) ?? instr.dest;
                 const n = newName(oldName);
                 instr.dest = n;
                 varStack[oldName].push(n);
+                ogNameLookup.set(n, oldName);
                 stuffToPop.push(varStack[oldName]);
             }
         });
@@ -134,7 +137,7 @@ export function ssa(cfg: NiceCfg) {
             if (s === "EXIT") { return; }
             s.block.forEach((p) => {
                 if ("op" in p && p.op === "get") {
-                    const v = p.dest!;
+                    const v = ogNameLookup.get(p.dest!) ?? p.dest!;
                     const upsilon = {
                         op: "set" as const,
                         args: [v, varStack[v][varStack[v].length - 1]],
