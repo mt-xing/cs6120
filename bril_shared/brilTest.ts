@@ -62,11 +62,13 @@ export async function testFileForCorrectnessAndReduction(
     return ogInstrs - newInstrs;
 }
 
-export async function runOnAllInFolder(t: Deno.TestContext, folder: string, prefix: string, optimization: (program: BrilProgram) => BrilProgram, strategy?: OptimizationTestStrategy) {
+export async function runOnAllInFolder(t: Deno.TestContext, folder: string, prefix: string, optimization: (program: BrilProgram) => BrilProgram, strategy?: OptimizationTestStrategy, ignore?: RegExp) {
     const files: WalkEntry[] = [];
     for await (const file of walk(folder)) {
         if (file.isFile) {
-            files.push(file);
+            if (!ignore || !ignore.test(file.name)) {
+                files.push(file);
+            }
         }
     }
     const res: number[] = [];
@@ -84,11 +86,14 @@ export function brilTest(name: string, config: {
     strategy?: OptimizationTestStrategy,
     optimization: (program: BrilProgram) => BrilProgram,
     prefix?: string,
+    ignoreRegex?: RegExp,
 }[]) {
     Deno.test({
         name,
         async fn(t) {
-            const resultRaw = await Promise.all(config.map(c => runOnAllInFolder(t, c.folder, c.prefix ?? name, c.optimization, c.strategy)));
+            const resultRaw = await Promise.all(
+                config.map(c => runOnAllInFolder(t, c.folder, c.prefix ?? name, c.optimization, c.strategy, c.ignoreRegex))
+            );
             const result = resultRaw.flat();
             const avgReduction = result.reduce((a, x) => a + x, 0) / result.length;
             result.sort((a, b) => a - b);

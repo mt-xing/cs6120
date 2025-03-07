@@ -1,7 +1,7 @@
 import { BasicBlock, BrilInstruction, BrilProgram, getBlocks, getCfg } from "../bril_shared/cfg.ts";
 import { newName } from "../bril_shared/newName.ts";
 import { CfgBlockNode, cfgToFn, NiceCfg, niceifyCfg } from "../bril_shared/niceCfg.ts";
-import { dominanceGraph, dominanceFrontier, dominanceTree, printDominanceTree } from "../bril_shared/dom.ts";
+import { dominanceGraph, dominanceFrontier, dominanceTree } from "../bril_shared/dom.ts";
 
 function computeDomTreeLookup(
     tree: ReturnType<typeof dominanceTree>,
