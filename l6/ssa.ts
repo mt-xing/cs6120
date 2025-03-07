@@ -60,7 +60,7 @@ function addInstrToBlock(block: CfgBlockNode, instr: BrilInstruction, beginning:
     }
 }
 
-export function ssa(cfg: NiceCfg, args: string[]): string[] {
+export function ssa(cfg: NiceCfg, args: string[]): { newArgs: string[], initialInstructions: BrilInstruction[] } {
     const domGraph = dominanceGraph(cfg);
     const domFrontier = dominanceFrontier(domGraph);
     const domTree = dominanceTree(domGraph);
@@ -181,6 +181,30 @@ export function ssa(cfg: NiceCfg, args: string[]): string[] {
         return n;
     });
 
+    const newInstructions: BrilInstruction[] = [];
+    const argsSet = new Set(args);
+    domTree.forEach(x => {
+        const s = x.block;
+        if (s === "EXIT") { return; }
+        s.block.forEach((p) => {
+            if ("op" in p && p.op === "get") {
+                const v = ogNameLookup.get(p.dest!) ?? p.dest!;
+                if (!argsSet.has(v)) {return;}
+                const upsilon = {
+                    op: "set" as const,
+                    args: [v, varStack[v][varStack[v].length - 1]],
+                };
+                newInstructions.push(upsilon);
+                const candidate = allPhis.get(p as {op: "get", dest: string});
+                if (candidate === undefined) {
+                    allPhis.set(p as {op: "get", dest: string}, new Set([upsilon]));
+                } else {
+                    candidate.add(upsilon);
+                }
+            }
+        });
+    });
+
     domTree.forEach(x => {
         if (x.block !== "EXIT") {
             rename(x.block);
@@ -193,7 +217,7 @@ export function ssa(cfg: NiceCfg, args: string[]): string[] {
         })
     });
 
-    return finalArgs;
+    return { newArgs: finalArgs, initialInstructions: newInstructions };
 }
 
 function getAllReadVars(x: BrilInstruction[], args?: string[]) {
@@ -212,13 +236,16 @@ function getAllReadVars(x: BrilInstruction[], args?: string[]) {
 export function ssaProgram(p: BrilProgram) {
     const cfgs: Record<string, NiceCfg> = {};
     const args: Record<string, string[]> = {};
+    const initialInstrs: Record<string, BrilInstruction[]> = {};
     p.functions.forEach(fn => {
         const {blocks, mapping} = getBlocks(fn.instrs);
         const cfg = getCfg(blocks, mapping);
         const name = fn.name;
         cfgs[name] = niceifyCfg(cfg);
         // args[name] = (fn.args?.map(x => x.name)) ?? [];
-        args[name] = ssa(cfgs[name], fn.args?.map(x => x.name) ?? []);
+        const {newArgs, initialInstructions} = ssa(cfgs[name], fn.args?.map(x => x.name) ?? []);
+        args[name] = newArgs;
+        initialInstrs[name] = initialInstructions;
     });
     
     const finalProgram: BrilProgram = {
@@ -227,14 +254,18 @@ export function ssaProgram(p: BrilProgram) {
             const newArgs = f.args?.map((a, i) => ({...a, name: args[f.name][i]})) ?? undefined;
             const readVars = getAllReadVars(newInstrs, newArgs?.map(x => x.name));
             const setup: BrilInstruction[] = Array.from(readVars).map((x) => {
-                return {
+                return [{
                     op: "undef",
                     dest: x,
-                }
-            });
+                }, {
+                    op: "set",
+                    args: [x, x],
+                }]
+            }).flat();
+            // console.log(initialInstrs[f.name]);
             return {
                 ...f,
-                instrs: setup.concat(newInstrs),
+                instrs: setup.concat(initialInstrs[f.name].concat(newInstrs)),
                 args: newArgs,
             };
         }),
