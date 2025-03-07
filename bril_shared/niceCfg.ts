@@ -108,6 +108,17 @@ function getFromSet<T>(x: Set<T>): T {
 }
 
 export function cfgToFn(cfg: NiceCfg): BrilInstruction[] {
+    const guardTargets = new Set<string>();
+    cfg.blocks.forEach((block) => {
+        block.block.forEach((instr) => {
+            if ("op" in instr) {
+                if (instr.op === "guard") {
+                    instr.labels?.forEach((x) => {guardTargets.add(x)});
+                }
+            }
+        });
+    });
+
     const o: BrilInstruction[] = [];
 
     if (cfg.blocks.size === 0) {
@@ -148,7 +159,20 @@ export function cfgToFn(cfg: NiceCfg): BrilInstruction[] {
                             succ = s;
                             break;
                         }
+                    } else if (opToSwitch === "speculate") {
+                        for (const s of n.succs) {
+                            if (!("op" in lastInstr)) {
+                                throw new Error();
+                            }
+                            // TODO if fallthrough case is also a guard target, this may not work
+                            if (s !== "EXIT" && s.block.length > 0 && "label" in s.block[0] && guardTargets.has(s.block[0].label)) {
+                                continue;
+                            }
+                            succ = s;
+                            break;
+                        }
                     } else {
+                        console.error(n);
                         throw new Error("Non-branch instruction with multiple succs");
                     }
                 }

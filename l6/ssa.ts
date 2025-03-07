@@ -48,6 +48,8 @@ function addInstrToBlock(block: CfgBlockNode, instr: BrilInstruction, beginning:
             case "jmp":
             case "br":
             case "ret":
+            case "guard":
+            case "speculate":
                 break;
             default: 
                 list.push(instr);

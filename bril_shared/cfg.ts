@@ -81,6 +81,9 @@ export function getCfg(blocks: BasicBlock[], mapping: Map<string, BasicBlock>): 
         cfg.set("START", s);
     }
 
+    const speculateBlocks = new Set<BrilInstruction[]>();
+    const guardTargets = new Set<BrilInstruction[]>();
+
     blocks.forEach((block, i, arr) => {
         const last = block.length > 0 ? block[block.length - 1] : undefined;
         if (last && "op" in last && last.op === "jmp") {
@@ -99,11 +102,23 @@ export function getCfg(blocks: BasicBlock[], mapping: Map<string, BasicBlock>): 
             s.add(arr[i + 1]);
             s.add(getMapping(last.labels![0]));
             cfg.set(block, s);
+            guardTargets.add(getMapping(last.labels![0]));
+        } else if (last && "op" in last && last.op === "speculate") {
+            const s = new Set<BasicBlock>();
+            s.add(arr[i + 1]);
+            cfg.set(block, s);
+            speculateBlocks.add(block);
         } else if (i !== arr.length - 1) {
             const s = new Set<BasicBlock>();
             s.add(arr[i + 1]);
             cfg.set(block, s);
         }
+    });
+
+    speculateBlocks.forEach((b) => {
+        guardTargets.forEach((t) => {
+            cfg.get(b)!.add(t);
+        });
     });
 
     return cfg;
