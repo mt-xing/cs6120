@@ -1,7 +1,7 @@
 import { BasicBlock, BrilInstruction, BrilProgram, getBlocks, getCfg } from "../bril_shared/cfg.ts";
 import { newName } from "../bril_shared/newName.ts";
 import { CfgBlockNode, cfgToFn, NiceCfg, niceifyCfg } from "../bril_shared/niceCfg.ts";
-import { dominanceGraph, dominanceFrontier, dominanceTree } from "../l5/dom.ts";
+import { dominanceGraph, dominanceFrontier, dominanceTree, printDominanceTree } from "../bril_shared/dom.ts";
 
 function computeDomTreeLookup(
     tree: ReturnType<typeof dominanceTree>,
@@ -64,6 +64,7 @@ export function ssa(cfg: NiceCfg, args: string[]): { newArgs: string[], initialI
     const domGraph = dominanceGraph(cfg);
     const domFrontier = dominanceFrontier(domGraph);
     const domTree = dominanceTree(domGraph);
+    // printDominanceTree(domTree);
     const domTreeLookup = computeDomTreeLookup(domTree, "START", new Map());
     
     const varDefs = new Map<string, Set<CfgBlockNode>>();

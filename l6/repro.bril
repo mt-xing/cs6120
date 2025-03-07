@@ -1,0 +1,14 @@
+# ARGS: 100
+@main(n: int) {
+  i   : int = const 0;
+  one : int = const 1;
+.begin:
+  i    : int  = add i one;
+  sqgt : bool = gt i n;
+  br sqgt .end .check;
+.check:
+  print i;
+  jmp .begin;
+.end:
+  print i;
+}
