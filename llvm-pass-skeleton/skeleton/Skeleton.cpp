@@ -63,7 +63,7 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
 
                             if (auto *rhsVal = dyn_cast<ConstantInt>(rhs)) {
                                 if (DEBUG) {
-                                    errs() << "FOUND INTEGER\n";
+                                    errs() << "Found Integer\n";
                                 }
                                 int64_t r = rhsVal->getSExtValue();
                                 if (DEBUG) {
@@ -78,7 +78,7 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
 
                                 if (floor(log2root) == log2root && log2root > 0 && r <= DBL_MAX) {
                                     if (DEBUG) {
-                                        errs() << "FOUND SHIFT CANDIDATE\n";
+                                        errs() << "Found Shift Candidate\n";
                                     }
 
                                     uint64_t rhsOfShift = static_cast<uint64_t>(log2root);
