@@ -3,6 +3,7 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
+#include <cfloat>
 
 constexpr bool DEBUG = false;
 
@@ -75,7 +76,7 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
                                     errs() << log2root << "\n";
                                 }
 
-                                if (floor(log2root) == log2root && log2root > 0) {
+                                if (floor(log2root) == log2root && log2root > 0 && r <= DBL_MAX) {
                                     if (DEBUG) {
                                         errs() << "FOUND SHIFT CANDIDATE\n";
                                     }
