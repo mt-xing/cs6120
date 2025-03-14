@@ -1,7 +1,3 @@
-int main() {
-    return 1 + 1;
-}
-
 int add(int a) {
     int c1 = a * 2;
     int c2 = a * 3;
@@ -12,4 +8,8 @@ int add(int a) {
     int c7 = a * 8;
     int c8 = a * 9;
     return c1 + c7;
+}
+
+int main() {
+    return add(5633);
 }
