@@ -7,7 +7,7 @@ import { CfgBlockNode, NiceCfg, NiceCfgNode, printCfgNode } from "./niceCfg.ts";
 type DomGraph = Map<CfgBlockNode | "EXIT", Set<CfgBlockNode | "EXIT">>;
 
 export function dominanceGraph(cfg: NiceCfg) {
-    const dom = new Map<CfgBlockNode | "EXIT", Set<CfgBlockNode | "EXIT">>();
+    const dom: DomGraph = new Map();
     const exitPreds = cfg.exit;
     const getDom = (b: CfgBlockNode | "EXIT") => {
         const candidate = dom.get(b);
