@@ -7,7 +7,7 @@ import { reachingDefs } from "../l4/reaching.ts";
 
 export function findLoops(cfg: NiceCfg) {
     const domGraph = dominanceGraph(cfg);
-    const loops = new Set<Set<NiceCfgNode>>();
+    const loops = new Map<NiceCfgNode, Set<NiceCfgNode>>();
 
     const addAllPredsToSet = (node: NiceCfgNode, set: Set<NiceCfgNode>, header: NiceCfgNode) => {
         if (node === header) {
@@ -28,7 +28,7 @@ export function findLoops(cfg: NiceCfg) {
             if (succ !== "EXIT" && domGraph.get(block)?.has(succ)) {
                 const headNode = succ;
                 const loop = new Set<NiceCfgNode>();
-                loops.add(loop);
+                loops.set(headNode, loop);
                 loop.add(block);
                 loop.add(headNode);
                 addAllPredsToSet(block, loop, headNode);
@@ -51,7 +51,9 @@ export function licm(cfg: CFG) {
     const loops = findLoops(niceCfg);
     const reaching = reachingDefs(cfg);
 
-    loops.forEach((loop) => {
+    const invariantCandidates = new Map<NiceCfgNode, Set<BrilInstruction>>();
+
+    loops.forEach((loop, headNode) => {
         const instrsInLoop = new Set<BrilInstruction>();
         const instrsAndBlockInLoop = new Set<{instr: BrilInstruction, block: NiceCfgNode}>();
         loop.forEach((node) => {
@@ -106,5 +108,9 @@ export function licm(cfg: CFG) {
 
             return { val, changed };
         })(new Set());
-    })
+
+        invariantCandidates.set(headNode, invariantInstrs);
+    });
+
+    console.log(invariantCandidates);
 }

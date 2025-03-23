@@ -1,7 +1,7 @@
-import { getNiceCfgsFromCommandLine } from "../bril_shared/niceCfg.ts";
-import { findLoops } from "./loop.ts";
+import { getCfgsFromCmdLine } from "../bril_shared/cfg.ts";
+import { licm } from "./loop.ts";
 
-const cfgs = await getNiceCfgsFromCommandLine();
+const cfgs = await getCfgsFromCmdLine();
 Object.entries(cfgs).forEach(([_name, cfg]) => {
-    findLoops(cfg);
+    licm(cfg);
 });
