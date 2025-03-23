@@ -1,7 +1,7 @@
-import { BrilInstruction, CFG } from "../bril_shared/cfg.ts";
+import { BrilInstruction, BrilProgram, CFG, getBlocks, getCfg, getCfgsFromProgram } from "../bril_shared/cfg.ts";
 import { dominanceGraph } from "../bril_shared/dom.ts";
 import { mayHaveSideEffect } from "../bril_shared/instr.ts";
-import { CfgBlockNode, NiceCfg, NiceCfgNode, niceifyCfg, printCfgNode } from "../bril_shared/niceCfg.ts";
+import { CfgBlockNode, cfgToFn, NiceCfg, NiceCfgNode, niceifyCfg, printCfgNode } from "../bril_shared/niceCfg.ts";
 import { iterateUntilConvergence } from "../l3/instructionProcessing.ts";
 import { reachingDefs } from "../l4/reaching.ts";
 
@@ -212,4 +212,17 @@ export function licm(cfg: CFG) {
     });
 
     return niceCfg;
+}
+
+export function licmProgram(program: BrilProgram): BrilProgram {
+    const p: BrilProgram = {
+        functions: program.functions.map((fn) => {
+            const {blocks, mapping} = getBlocks(fn.instrs);
+            const cfg = getCfg(blocks, mapping);
+            const res = licm(cfg);
+            return { ...fn, instrs: cfgToFn(res) };
+        }),
+    };
+
+    return p;
 }
