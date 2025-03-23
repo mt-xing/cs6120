@@ -9,6 +9,9 @@ export function mayHaveSideEffect(instr: BrilInstruction) {
             case "speculate":
             case "call":
             case "alloc":
+            case "store":
+            case "free":
+            case "load":
             case "div":
                 return true;
             default: break;

@@ -1,10 +1,7 @@
-import { getCfgsFromCmdLine } from "../bril_shared/cfg.ts";
-import { cfgToFn } from "../bril_shared/niceCfg.ts";
-import { licm } from "./loop.ts";
+import { getProgramFromCmdLine } from "../bril_shared/cfg.ts";
+import { jsonStringify } from "../bril_shared/io.ts";
+import { licmProgram } from "./loop.ts";
 
-const cfgs = await getCfgsFromCmdLine();
-Object.entries(cfgs).forEach(([_name, cfg]) => {
-    const newCfg = licm(cfg);
-    const newProgram = cfgToFn(newCfg);
-    console.log(newProgram);
-});
+const program = await getProgramFromCmdLine();
+const newProgram = licmProgram(program);
+console.log(jsonStringify(newProgram));

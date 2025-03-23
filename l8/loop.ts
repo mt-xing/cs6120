@@ -197,6 +197,9 @@ export function licm(cfg: CFG) {
     });
 
     invariantCandidates.forEach((instrs, headNode) => {
+        if (instrs.size === 0) {
+            return;
+        }
         const loop = loops.get(headNode);
         if (!loop) {throw new Error();}
         if (typeof headNode === "string") {return;}
