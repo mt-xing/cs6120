@@ -6,6 +6,9 @@ import { CfgBlockNode, NiceCfg, NiceCfgNode, printCfgNode } from "./niceCfg.ts";
  */
 type DomGraph = Map<CfgBlockNode | "EXIT", Set<CfgBlockNode | "EXIT">>;
 
+/**
+ * Compute a map from block to set of blocks that dominate it.
+ */
 export function dominanceGraph(cfg: NiceCfg) {
     const dom: DomGraph = new Map();
     const exitPreds = cfg.exit;

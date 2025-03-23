@@ -1,7 +1,7 @@
 import { BrilInstruction, CFG } from "../bril_shared/cfg.ts";
 import { dominanceGraph } from "../bril_shared/dom.ts";
 import { mayHaveSideEffect } from "../bril_shared/instr.ts";
-import { NiceCfg, NiceCfgNode, niceifyCfg } from "../bril_shared/niceCfg.ts";
+import { CfgBlockNode, NiceCfg, NiceCfgNode, niceifyCfg, printCfgNode } from "../bril_shared/niceCfg.ts";
 import { iterateUntilConvergence } from "../l3/instructionProcessing.ts";
 import { reachingDefs } from "../l4/reaching.ts";
 
@@ -46,12 +46,83 @@ function getFromSet<T>(x: Set<T>): T {
     throw new Error("Set is empty");
 }
 
+function findAllUsesOfVariable(varName: string, cfg: NiceCfg): Set<NiceCfgNode> {
+    const o = new Set<NiceCfgNode>();
+
+    cfg.blocks.forEach((block) => {
+        if (typeof block === "string") { return; }
+        if (block.block.some((instr) => {
+            return "op" in instr && instr.args?.some((a) => a === varName);
+        })) {
+            o.add(block);
+            return;
+        }
+    });
+
+    return o;
+}
+
+function countDefsOfVar(varName: string, loop: Set<NiceCfgNode>): number {
+    return Array.from(loop).map((node) => {
+        if (typeof node === "string") {
+            return 0;
+        }
+        return node.block.filter((instr) => "op" in instr && instr.dest === varName).length;
+    }).reduce((a, x) => a + x, 0);
+}
+
+function prependBlock(cfg: NiceCfg, block: CfgBlockNode, loop: Set<NiceCfgNode>) {
+    if (block.block.length === 0 || !("label" in block.block[0])) {
+        block.block.unshift({
+            label: `loop-header-${printCfgNode(block)}-${crypto.randomUUID()}`
+        })
+    }
+    if (!("label" in block.block[0])) {
+        throw new Error();
+    }
+    const label = block.block[0].label;
+    const newLabel = `loop-pre-header-${label}-${crypto.randomUUID()}`;
+    const newBlock: CfgBlockNode = {
+        block: [
+            { label: newLabel },
+            { op: 'jmp', labels: [label] }
+        ],
+        preds: new Set(block.preds),
+        succs: new Set([block]),
+    };
+    cfg.blocks.add(newBlock);
+    block.preds.clear();
+    block.preds.add(newBlock);
+    newBlock.preds.forEach((pred) => {
+        if (loop.has(pred)) { return; }
+        if (pred === "ENTRY") {
+            cfg.entry.delete(block);
+            cfg.entry.add(newBlock);
+            return;
+        }
+        pred.succs.delete(block);
+        pred.succs.add(newBlock);
+        const lastInstrInPred = pred.block[pred.block.length - 1];
+        if (pred.block.length === 0 || !("op" in lastInstrInPred) || (lastInstrInPred.op !== "jmp" && lastInstrInPred.op !== "br")) {
+            pred.block.push({
+                op: "jmp",
+                labels: [newLabel],
+            })
+        } else {
+            lastInstrInPred.labels = lastInstrInPred.labels?.map(x => x === label ? newLabel : x);
+        }
+    });
+    return newBlock;
+}
+
 export function licm(cfg: CFG) {
     const niceCfg = niceifyCfg(cfg);
     const loops = findLoops(niceCfg);
     const reaching = reachingDefs(cfg);
+    const dommedBy = dominanceGraph(niceCfg);
 
     const invariantCandidates = new Map<NiceCfgNode, Set<BrilInstruction>>();
+    const instrToBlock = new Map<BrilInstruction, CfgBlockNode>();
 
     loops.forEach((loop, headNode) => {
         const instrsInLoop = new Set<BrilInstruction>();
@@ -99,8 +170,21 @@ export function licm(cfg: CFG) {
                     }
                     return false;
                 })) {
+
+                    if (!instr.dest) { return; }
+                    const { dest } = instr;
+
+                    const uses = findAllUsesOfVariable(dest, niceCfg);
+                    if (Array.from(uses).some((use) => typeof use !== "string" && !dommedBy.get(use)!.has(block))) {
+                        return;
+                    }
+                    if (countDefsOfVar(dest, loop) !== 1) {
+                        return;
+                    }
+
                     if (!val.has(instr)) {
                         val.add(instr);
+                        instrToBlock.set(instr, block);
                         changed = true;
                     }
                 }
@@ -112,5 +196,20 @@ export function licm(cfg: CFG) {
         invariantCandidates.set(headNode, invariantInstrs);
     });
 
-    console.log(invariantCandidates);
+    invariantCandidates.forEach((instrs, headNode) => {
+        const loop = loops.get(headNode);
+        if (!loop) {throw new Error();}
+        if (typeof headNode === "string") {return;}
+        const preHeader = prependBlock(niceCfg, headNode, loop);
+        const lastInstr = preHeader.block.pop()!;
+        instrs.forEach((instr) => {
+            preHeader.block.push(instr);
+            const containingBlock = instrToBlock.get(instr);
+            if (!containingBlock) { throw new Error(); }
+            containingBlock.block = containingBlock.block.filter(x => x !== instr);
+        });
+        preHeader.block.push(lastInstr);
+    });
+
+    return niceCfg;
 }
