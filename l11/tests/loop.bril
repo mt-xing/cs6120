@@ -1,0 +1,16 @@
+@main {
+    a: int = const 1;
+  .top:
+    ten: int = const 10;
+    i: int = const 0;
+  .guard:
+    cond: bool = lt i ten;
+    br cond .body .done;
+  .body:
+    i: int = add i a;
+    x: int = add ten a;
+    print i;
+    jmp .guard;
+  .done:
+    print a;
+}
