@@ -1,4 +1,5 @@
-import { BrilFunction, BrilInstruction } from "../bril_shared/cfg.ts";
+import { BrilFunction, BrilInstruction, BrilProgram } from "../bril_shared/cfg.ts";
+import { jsonStringify, pipeStringIntoCmdAndGetOutput } from "../bril_shared/io.ts";
 
 type TraceInfo = {
     op: "trace-info",
@@ -14,6 +15,8 @@ type TraceInfo = {
     }
 )
 
+type Trace = (Exclude<BrilInstruction, { label: string }> | TraceInfo)[];
+
 function generateNewLabel(baseName: string) {
     return `${baseName}:${`${Math.random()}`.substring(2)}`;
 }
@@ -22,7 +25,14 @@ function assertIsTraceInfo(_x: unknown): _x is TraceInfo {
     return true;
 }
 
-export function traceMainFn(fn: BrilFunction, trace: (Exclude<BrilInstruction, { label: string }> | TraceInfo)[]) {
+export async function getTraceFromMain(program: BrilProgram): Promise<Trace> {
+    const programOutput = await pipeStringIntoCmdAndGetOutput("deno", jsonStringify(program), ["brili.ts"].concat(Deno.args.slice(1)));
+    const outputLines = programOutput.stderr.split("\n").filter(x => !!x);
+    const trace = JSON.parse("[" + outputLines.join(",") + "]");
+    return trace;
+}
+
+export function rewriteMainFn(fn: BrilFunction, trace: Trace) {
     const newArr: BrilInstruction[] = [{op: "speculate"}];
     const abortLabelName = generateNewLabel("abort");
     let originalFn = fn.instrs;
@@ -30,7 +40,7 @@ export function traceMainFn(fn: BrilFunction, trace: (Exclude<BrilInstruction, {
 
     trace.forEach((traceInstr) => {
         switch(traceInstr.op) {
-            case "trace-msg":
+            case "trace-info":
                 if (!assertIsTraceInfo(traceInstr)) {
                     throw new Error();
                 }
@@ -67,6 +77,7 @@ export function traceMainFn(fn: BrilFunction, trace: (Exclude<BrilInstruction, {
                 }
                 break;
             case "br":
+            case "jmp":
                 break;
             default:
                 newArr.push(traceInstr);

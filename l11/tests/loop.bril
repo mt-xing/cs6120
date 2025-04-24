@@ -1,4 +1,4 @@
-@main {
+@main() {
     a: int = const 1;
   .top:
     ten: int = const 100;

@@ -1,8 +1,0 @@
-@main {
-    cont: bool = const true;
-    c2: bool = not cont;
-    jmp .hi;
-    speculate;
-    guard cont .test;
-    commit;
-}
