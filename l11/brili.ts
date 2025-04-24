@@ -848,12 +848,6 @@ function evalInstr(instr: bril.Instruction, state: State, instrIndex: number): A
 }
 
 function evalFunc(func: bril.Function, state: State): Value | null {
-  if (func.name === "main") {
-    tracing = true;
-    numTraced = 0;
-  } else {
-    tracing = false;
-  }
   for (let i = 0; i < func.instrs.length; ++i) {
     const line = func.instrs[i];
     if ("op" in line) {
