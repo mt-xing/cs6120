@@ -440,13 +440,27 @@ function evalCall(instr: bril.Operation, state: State): Action {
   return NEXT;
 }
 
+const instructionsToBailOn = new Set<bril.Instruction["op"]>(["alloc", "free", "store", "load", "call"]);
+let tracing = true;
+let numTraced = 0;
+const MAX_TRACE = 64;
+
 /**
  * Interpret an instruction in a given environment, possibly updating the
  * environment. If the instruction branches to a new label, return that label;
  * otherwise, return "next" to indicate that we should proceed to the next
  * instruction or "end" to terminate the function.
  */
-function evalInstr(instr: bril.Instruction, state: State): Action {
+function evalInstr(instr: bril.Instruction, state: State, instrIndex: number): Action {
+  if (tracing) {
+    if (instructionsToBailOn.has(instr.op) || numTraced++ >= MAX_TRACE) {
+      tracing = false;
+      console.error(JSON.stringify({op: "trace-info", msg: "abort", instrIndex}));
+    } else {
+      console.error(JSON.stringify(instr));
+    }
+  }
+
   state.icount += BigInt(1);
 
   // Check that we have the right number of arguments.
@@ -657,6 +671,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
     case "br": {
       const cond = getBool(instr, state.env, 0);
+      if (tracing) {
+        console.error(JSON.stringify({op: "trace-info", msg: "br-path", cond, arg: instr.args![0], labels: instr.labels!}));
+      }
       if (cond) {
         return { "action": "jump", "label": getLabel(instr, 0) };
       } else {
@@ -831,11 +848,17 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 }
 
 function evalFunc(func: bril.Function, state: State): Value | null {
+  if (func.name === "main") {
+    tracing = true;
+    numTraced = 0;
+  } else {
+    tracing = false;
+  }
   for (let i = 0; i < func.instrs.length; ++i) {
     const line = func.instrs[i];
     if ("op" in line) {
       // Run an instruction.
-      const action = evalInstr(line, state);
+      const action = evalInstr(line, state, i);
 
       // Take the prescribed action.
       switch (action.action) {

@@ -1,7 +1,7 @@
 @main {
     a: int = const 1;
   .top:
-    ten: int = const 10;
+    ten: int = const 100;
     i: int = const 0;
   .guard:
     cond: bool = lt i ten;
