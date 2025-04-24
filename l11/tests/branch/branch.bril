@@ -1,0 +1,13 @@
+# ARGS 12
+@main(val: int) {
+    ten: int = const 10;
+    cond: bool = lt val ten;
+    br cond .t .f;
+  .t:
+    print val;
+    jmp .done;
+  .f:
+    print ten;
+  .done:
+    print val;
+}

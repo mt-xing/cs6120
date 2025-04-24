@@ -19,7 +19,13 @@ async function optimization(program: BrilProgram, args: string[]): Promise<BrilP
     return newProgram;
 }
 
-brilTest("Tracing", [
+brilTest("Tracing Simple", [
     { folder: "./tests", optimization, strategy: "loose" },
     { folder: "../bril_tests/benchmarks/core", optimization, strategy: "loose" },
 ]);
+
+brilTest("Tracing Exit", [
+    { folder: "./tests/branch", optimization: (program: BrilProgram, _args: string[]): Promise<BrilProgram> => {
+        return optimization(program, ["5"])
+    }, strategy: "loose" },
+])
