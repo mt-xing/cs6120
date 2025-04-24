@@ -1,4 +1,4 @@
-import { BrilFunction, BrilProgram, getProgramFromCmdLine } from "../bril_shared/cfg.ts";
+import { BrilProgram, getProgramFromCmdLine } from "../bril_shared/cfg.ts";
 import { jsonStringify } from "../bril_shared/io.ts";
 import { getTraceFromMain, rewriteMainFn } from "./trace.ts";
 
@@ -7,7 +7,7 @@ const mainFn = program.functions.filter(x => x.name === "main");
 if (mainFn.length !== 1) {
     throw new Error("Could not find single main function");
 }
-const trace = await getTraceFromMain(program);
+const trace = await getTraceFromMain(program, Deno.args.slice(1));
 
 const newInstrs = rewriteMainFn(mainFn[0], trace);
 const newProgram: BrilProgram = {

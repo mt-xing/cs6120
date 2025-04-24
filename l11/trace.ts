@@ -25,9 +25,10 @@ function assertIsTraceInfo(_x: unknown): _x is TraceInfo {
     return true;
 }
 
-export async function getTraceFromMain(program: BrilProgram): Promise<Trace> {
-    const programOutput = await pipeStringIntoCmdAndGetOutput("deno", jsonStringify(program), ["brili.ts"].concat(Deno.args.slice(1)));
-    const outputLines = programOutput.stderr.split("\n").filter(x => !!x);
+export async function getTraceFromMain(program: BrilProgram, args: string[], trimLast?: boolean): Promise<Trace> {
+    const programOutput = await pipeStringIntoCmdAndGetOutput("deno", jsonStringify(program), ["brili.ts"].concat(args));
+    const fullOutputLines = programOutput.stderr.split("\n").filter(x => !!x);
+    const outputLines = trimLast ? fullOutputLines.slice(0, fullOutputLines.length - 1) : fullOutputLines;
     const trace = JSON.parse("[" + outputLines.join(",") + "]");
     return trace;
 }
@@ -85,6 +86,6 @@ export function rewriteMainFn(fn: BrilFunction, trace: Trace) {
         }
     });
     
-    const extra = committed ? [{label: abortLabelName}] : [{op: "commit"}, {label: abortLabelName}];
+    const extra = committed ? [{op: "ret"}, {label: abortLabelName}] : [{op: "commit"}, {op: "ret"}, {label: abortLabelName}];
     return newArr.concat(extra).concat(originalFn);
 }

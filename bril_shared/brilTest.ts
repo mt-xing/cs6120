@@ -20,7 +20,7 @@ type OptimizationTestStrategy = "strict reduce" | "loose";
  * the check outright.
  */
 export async function testFileForCorrectnessAndReduction(
-    optimization: (program: BrilProgram) => BrilProgram,
+    optimization: ((program: BrilProgram, args: string[]) => Promise<BrilProgram>) | ((program: BrilProgram) => BrilProgram),
     filePath: string,
     strategy?: OptimizationTestStrategy
 ) {
@@ -39,7 +39,7 @@ export async function testFileForCorrectnessAndReduction(
     const ogOutput = ogInterpOutput.stdout;
     const ogInstrs = extractDynInstrs(ogInterpOutput.stderr);
 
-    const newProgram = optimization(program);
+    const newProgram = await optimization(program, programArgs);
     const newProgramText = jsonStringify(newProgram);
 
     const newInterpOutput = await pipeStringIntoCmdAndGetOutput("brili", newProgramText, programArgs);
@@ -62,7 +62,13 @@ export async function testFileForCorrectnessAndReduction(
     return ogInstrs - newInstrs;
 }
 
-export async function runOnAllInFolder(t: Deno.TestContext, folder: string, prefix: string, optimization: (program: BrilProgram) => BrilProgram, strategy?: OptimizationTestStrategy, ignore?: RegExp) {
+export async function runOnAllInFolder(
+    t: Deno.TestContext,
+    folder: string,
+    prefix: string,
+    optimization: ((program: BrilProgram, args: string[]) => Promise<BrilProgram>) | ((program: BrilProgram) => BrilProgram),
+    strategy?: OptimizationTestStrategy, ignore?: RegExp
+) {
     const files: WalkEntry[] = [];
     for await (const file of walk(folder)) {
         if (file.isFile) {
@@ -84,7 +90,7 @@ export async function runOnAllInFolder(t: Deno.TestContext, folder: string, pref
 export function brilTest(name: string, config: {
     folder: string,
     strategy?: OptimizationTestStrategy,
-    optimization: (program: BrilProgram) => BrilProgram,
+    optimization: ((program: BrilProgram, args: string[]) => Promise<BrilProgram>) | ((program: BrilProgram) => BrilProgram),
     prefix?: string,
     ignoreRegex?: RegExp,
 }[]) {
